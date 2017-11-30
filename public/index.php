@@ -9,7 +9,7 @@ require_once PAGES . '/back/' . $page . '.php';
 		<meta charset="UTF-8">
 		<title><?php echo $pages[$page]; ?></title>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.css">
-		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="<?php echo CSS; ?>">
 	</head>
 	<body>
 		<?php if (isset($_SESSION['login'])): ?>
@@ -47,5 +47,10 @@ require_once PAGES . '/back/' . $page . '.php';
 		<div class="bottom"></div>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.js"></script>
+		<script>
+			$('.message .close').on('click', function() {
+				$(this).closest('.message').transition('fade');
+			});
+		</script>
 	</body>
 </html>

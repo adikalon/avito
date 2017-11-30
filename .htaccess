@@ -1,5 +1,5 @@
 Options -Indexes
-#<IfModule mod_rewrite.c>
-#	RewriteEngine On 
-#	RewriteRule ^(.*)$ public/$1 [L]
-#</IfModule>
+<IfModule mod_rewrite.c>
+	RewriteEngine On 
+	RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

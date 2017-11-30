@@ -46,7 +46,7 @@ class Account
 	 * @param string $page Ключевое cлово страницы
 	 * @return curl Ошибки метода Request::curl()
 	 * @return false В случае неизвестной ошибки
-	 * @return array Массив с ключами 'token' и 'value'
+	 * @return array Массив с ключами 'token', 'value' и 'captcha'
 	 */
 	private static function getToken($page = 'auth')
 	{
@@ -63,6 +63,7 @@ class Account
 				"Upgrade-Insecure-Requests: 1",
 			],
 		];
+		$captcha = false;
 		$pageToken = Request::curl($page, $options);
 		if (!is_string($pageToken)) {
 			return $pageToken;
@@ -71,12 +72,17 @@ class Account
 		$token = $match[1];
 		preg_match('/.*name="token\[\d+\]"\s?value="(.+)">.*/', $pageToken, $match);
 		$value = $match[1];
+		preg_match('/.*(form-captcha-input).*/', $pageToken, $match);
+		if (isset($match[1]) and !empty($match[1])) {
+			$captcha = true;
+		}
 		if (!$token or !$value) {
 			return false;
 		}
 		return [
 			'token' => $token,
 			'value' => $value,
+			'captcha' => $captcha,
 		];
 	}
 	
@@ -150,25 +156,28 @@ class Account
 			],
 		];
 		$pageInfo = Request::curl(false, $options);
+		if (empty($pageInfo)) {
+			return [
+				'name' => null,
+				'auth' => false,
+			];
+		}
 		if (!is_string($pageInfo)) {
 			return $pageInfo;
 		}
 		preg_match('/.*<span class="fader">(.+)<\/span>.*/U', $pageInfo, $match);
-		$name = $match[1];
-		if (!$name) {
+		if (!isset($match[1]) or empty($match[1]) or !$match[1]) {
 			return false;
 		}
-		/*
-		 * Тут необходимо получить auth заблокирован или активен
-		 */
 		return [
-			'name' => $name,
-			'auth' => '',
+			'name' => $match[1],
+			'auth' => true,
 		];
 	}
 	
 	/**
 	 * Возвращает массив для заполнения в Account::auth()
+	 * 
 	 * @param mixed $name Имя хозяина аккаунту. Null в случае неудачной авторизации
 	 * @param string $login Логин аккаунта
 	 * @param string $password Пароль аккаунта
@@ -176,7 +185,7 @@ class Account
 	 * @param mixed $status True - аккаунт активен. False - аккаунт заблокирован. Null в случае неудачной авторизации
 	 * @return array Массив параметров аккаунта
 	 */
-	private static function getElemsAuth($name, $login, $password, $sessid, $status)
+	private static function getElemsAuth($name, $login, $password, $sessid, $status, $captcha)
 	{
 		return [
 			'name' => $name,
@@ -184,17 +193,18 @@ class Account
 			'password' => $password,
 			'sessid' => $sessid,
 			'status' => $status,
+			'captcha' => $captcha,
 		];
 	}
 
 	/**
 	 * Авторизует и добавляет в БД переданные аккаунты
 	 * 
-	 * Еслимент 'auth' возвращаемого массива отвечает за статус авторизации:
+	 * Элемент 'auth' возвращаемого массива отвечает за статус авторизации:
 	 * 
 	 * null - Не удалось авторизироваться
 	 * 
-	 * false - Аккаунт заблокирован
+	 * false - Аккаунт заблокирован либо неверный логин или пароль
 	 * 
 	 * true - Аккаунт активен
 	 * @param array $accounts Массив аккаунтов полученых при помощи Account::parse()
@@ -213,23 +223,55 @@ class Account
 			if (!is_array($tokens)) {
 				// Не удалось соедениться с сервером
 				return false;
+			} else {
+				if ($tokens['captcha'] === true) {
+					// Требуется ввод каптчи
+					$results[] = self::getElemsAuth(null, $login, $password, null, null, true);
+					continue;
+				}
 			}
 			$token = $tokens['token'];
 			$value = $tokens['value'];
 			$sessid = self::getSessid($login, $password, $token, $value);
 			if (!is_string($sessid)) {
 				// Не удалось авторизироваться
-				$results[] = self::getElemsAuth(null, $login, $password, null, null);
+				$results[] = self::getElemsAuth(null, $login, $password, null, null, false);
 				continue;
 			}
 			$info = self::getInfo($sessid);
 			if (!is_array($info)) {
 				// Не удалось авторизироваться
-				$results[] = self::getElemsAuth(null, $login, $password, $sessid, null);
+				$results[] = self::getElemsAuth(null, $login, $password, $sessid, null, false);
 				continue;
 			}
-			$results[] = self::getElemsAuth($info['name'], $login, $password, $sessid, $info['auth']);
+			$results[] = self::getElemsAuth($info['name'], $login, $password, $sessid, $info['auth'], false);
 		}
 		return $results;
+	}
+	
+	/**
+	 * Собирательный метод. Задействует все необходимые для добавления/обновления аккаунтов методы
+	 * 
+	 * @param string $accounts Список аккаунтов в формате login:pass
+	 * @return 1 Список аккаунтов составлен некорректно
+	 * @return 2 Не удалось соеденитья с avito.ru
+	 * @return 3 Неизвестная ошибка
+	 * @return array Массив добавленных и обновленных аккаунтов с информацией о занесении или причинах незанесения в БД
+	 */
+	public static function setAccounts($accounts)
+	{
+		$parse = self::parse($accounts);
+		if (!$parse) {
+			return 1;
+		}
+		$auth = self::auth($parse);
+		if (!$auth) {
+			return 2;
+		}
+		$insert = AccountWriter::insertOrUpdate($auth);
+		if (!$insert) {
+			return 3;
+		}
+		return $insert;
 	}
 }

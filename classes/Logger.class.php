@@ -7,43 +7,45 @@ class Logger
 {
 	/**
 	 * Вывод лога в консоль
+	 * 
+	 * @param string $message Текст сообщения
 	 */
-	static public function console($message)
+	public static function console($message)
 	{
 		echo "[".date('H:i:s')."]: ".$message."\n";
 	}
 	
 	/**
 	 * Запись лога в файл
+	 * 
+	 * @param string $message Текст сообщения
 	 */
-	static public function file($message, $dir = false)
+	public static function file($message)
 	{
-		file_put_contents(self::dir($dir)."/logs_".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
+		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
 	}
 	
 	/**
 	 * Запись лога в файл и вывод в консоль
+	 * 
+	 * @param string $message Текст сообщения
 	 */
-	static public function send($message, $dir = false)
+	public static function send($message)
 	{
 		echo "[".date('H:i:s')."]: ".$message."\n";
-		file_put_contents(self::dir($dir)."/logs_".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
+		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
 	}
 	
 	/**
 	 * Создание нужных директорий и возврат пути
+	 * 
+	 * @return string Путь к директории с логами
 	 */
-	static private function dir($name = false)
+	private static function dir()
 	{
-		if (!$name) {
-			$name = PARSER_NAME;
-		}
 		if (!file_exists(LOGS) or !is_dir(LOGS)) {
 			mkdir(LOGS);
 		}
-		if (!file_exists(LOGS.'/'.$name) or !is_dir(LOGS.'/'.$name)) {
-			mkdir(LOGS.'/'.$name);
-		}
-		return LOGS.'/'.$name;
+		return LOGS;
 	}
 }
