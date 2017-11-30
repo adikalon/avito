@@ -147,6 +147,8 @@ class AccountWriter
 	 *
 	 * @param string $login Логин аккаунта
 	 * @param string $status Статус авторизации
+	 * @param boolean $captcha Был ли запрос на ввод каптчи
+	 * @param boolean $new Новая или обновленная запись
 	 * @return array Массив параметров аккаунта
 	 */
 	private static function getElemsIns($login, $status, $captcha, $new)

@@ -1,5 +1,5 @@
 <?php
-// afe72wmz
+
 if (isset($_POST['login']) and isset($_POST['pass'])) {
 	$login = DB::connect()->quote(trim($_POST['login']));
 	$pass = trim($_POST['pass']);
