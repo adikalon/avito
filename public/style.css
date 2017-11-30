@@ -1,0 +1,27 @@
+html, body {
+	background-color: #fdfdfd;
+}
+
+body {
+	padding: 0 35px 0px 35px;
+}
+
+.auth-form {
+	width: 300px;
+	margin: 0 auto;
+	padding-top: 100px;
+}
+
+.auth-button {
+	margin: 0 !important;
+}
+
+.auth-enter {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.bottom {
+	height: 50px;
+}
