@@ -51,7 +51,9 @@ class Category
 		if (!is_string($page)) {
 			return $page;
 		}
-		$breadcrumbs = phpQuery::newDocument($page)->find('div.breadcrumbs.js-breadcrumbs')->eq(0)->text();
+		$query = phpQuery::newDocument($page);
+		$breadcrumbs = $query->find('div.breadcrumbs.js-breadcrumbs')->eq(0)->text();
+		$query->unloadDocument();
 		$patterns = [
 			'/\'/',
 			'/"/',
