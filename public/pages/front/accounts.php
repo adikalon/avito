@@ -21,7 +21,7 @@
 </div>
 <?php endif; ?>
 <?php if (isset($insertResponse)): ?>
-<div class="ui message">
+<div class="ui info message">
 	<i class="close icon"></i>
 	<div class="header">
 		Результат:
