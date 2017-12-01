@@ -14,6 +14,7 @@ define('PAGES', PUBL.'/pages');
 define('DATABASES', CORE);
 define('COMPOSER', CORE.'/vendor/autoload.php');
 define('CSS', 'public/style.css');
+define('ICO', 'public/favicon.ico');
 
 // Автозагрузка классов
 spl_autoload_register(function ($class) {

@@ -3,7 +3,7 @@ html, body {
 }
 
 body {
-	padding: 0 35px 0px 35px;
+	padding: 0 35px 0 35px;
 }
 
 .auth-form {
@@ -23,5 +23,5 @@ body {
 }
 
 .bottom {
-	height: 50px;
+	height: 20px;
 }

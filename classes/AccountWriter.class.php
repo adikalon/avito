@@ -29,10 +29,8 @@ class AccountWriter
 		}
 		$results = [];
 		foreach ($accounts as $account) {
-			if (!$account['status']) {
-				// Если captcha === true - требуется ввод каптчи
-				// В противном случае аккаунт заблокирован, либо введены неверные логин или пароль
-				$results[] = self::getElemsIns($account['login'], $account['status'], $account['captcha'], null);
+			if (!$account['name']) {
+				$results[] = self::getElemsIns($account, null, null);
 				continue;
 			}
 			$login = DB::connect()->quote($account['login']);
@@ -41,18 +39,18 @@ class AccountWriter
 			if ($acc) {
 				if (self::update($acc->id, $account)) {
 					// Запись обновлена
-					$results[] = self::getElemsIns($account['login'], $account['status'], $account['captcha'], false);
+					$results[] = self::getElemsIns($account, true, false);
 				} else {
 					// Ошибка обновления в БД
-					$results[] = self::getElemsIns($account['login'], null, $account['captcha'], false);
+					$results[] = self::getElemsIns($account, false, false);
 				}
 			} else {
 				if (self::insert($account)) {
 					// Запись добавлена
-					$results[] = self::getElemsIns($account['login'], $account['status'], $account['captcha'], true);
+					$results[] = self::getElemsIns($account, true, true);
 				} else {
 					// Ошибка вставки в БД
-					$results[] = self::getElemsIns($account['login'], null, $account['captcha'], true);
+					$results[] = self::getElemsIns($account, false, true);
 				}
 			}
 		}
@@ -115,8 +113,11 @@ class AccountWriter
 		$login = DB::connect()->quote($account['login']);
 		$password = DB::connect()->quote($account['password']);
 		$sessid = DB::connect()->quote($account['sessid']);
-		$status = DB::connect()->quote($account['status']);
-		$sql = "INSERT INTO accounts (name, login, password, sessid, status) VALUES ($name, $login, $password, $sessid, $status)";
+		$auth = $account['auth'] ? 1 : 0;
+		$captcha = $account['captcha'] ? 1 : 0;
+		$block = $account['block'] ? 1 : 0;
+		$nologpas = $account['nologpas'] ? 1 : 0;
+		$sql = "INSERT INTO accounts (name, login, password, sessid, auth, captcha, block, nologpas) VALUES ($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas)";
 		return DB::connect()->exec($sql);
 	}
 	
@@ -137,27 +138,33 @@ class AccountWriter
 		$login = DB::connect()->quote($account['login']);
 		$password = DB::connect()->quote($account['password']);
 		$sessid = DB::connect()->quote($account['sessid']);
-		$status = DB::connect()->quote($account['status']);
-		$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, status=$status WHERE id=$id";
+		$auth = $account['auth'] ? 1 : 0;
+		$captcha = $account['captcha'] ? 1 : 0;
+		$block = $account['block'] ? 1 : 0;
+		$nologpas = $account['nologpas'] ? 1 : 0;
+		$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas WHERE id=$id";
 		return DB::connect()->exec($sql);
 	}
 	
 	/**
 	 * Возвращает массив для заполнения в AccountWriter::insertOrUpdate()
 	 *
-	 * @param string $login Логин аккаунта
-	 * @param string $status Статус авторизации
-	 * @param boolean $captcha Был ли запрос на ввод каптчи
-	 * @param boolean $new Новая или обновленная запись
+	 * @param array $account Массив с инфомаией об авторизации аккаунта
+	 * @param mixed $result True - удалось записать данные в БД. False - не удалось. Null - не принималась попытка
+	 * @param mixed $new True - новая запись. False - обновленная. Null - не авторизированная
 	 * @return array Массив параметров аккаунта
 	 */
-	private static function getElemsIns($login, $status, $captcha, $new)
+	private static function getElemsIns($account, $result, $new)
 	{
 		return [
-			'login' => $login,
-			'status' => $status,
-			'captcha' => $captcha,
-			'new' => $new,
+			'name' => $account['name'],
+			'login' => $account['login'],
+			'auth' => $account['auth'],
+			'captcha' => $account['captcha'],
+			'block' => $account['block'],
+			'nologpas' => $account['nologpas'],
+			'result' => $result,
+			'new' => $new
 		];
 	}
 }

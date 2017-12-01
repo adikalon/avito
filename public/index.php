@@ -10,6 +10,7 @@ require_once PAGES . '/back/' . $page . '.php';
 		<title><?php echo $pages[$page]; ?></title>
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.2.9/semantic.min.css">
 		<link rel="stylesheet" href="<?php echo CSS; ?>">
+		<link rel="shortcut icon" href="<?php echo ICO; ?>" type="image/x-icon">
 	</head>
 	<body>
 		<?php if (isset($_SESSION['login'])): ?>

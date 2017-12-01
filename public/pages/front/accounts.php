@@ -29,18 +29,31 @@
 	<ul class="list">
 		<?php foreach ($insertResponse as $account): ?>
 		<li>
-			<?php if ($account['captcha']): ?>
-			Не удалось <?php echo $account['new'] ? 'добавить' : 'обновить'; ?> аккаунт <b><?php echo $account['login']; ?></b>. Требуется ввод каптчи
-			<?php elseif(!$account['status']): ?>
-			Не удалось <?php echo $account['new'] ? 'добавить' : 'обновить'; ?> аккаунт <b><?php echo $account['login']; ?></b>. Неверный логин или пароль, либо аккаунт заблокирован
-			<?php else: ?>
-			Аккаунт <b><?php echo $account['login']; ?></b> успешно <?php echo $account['new'] ? 'добавилен' : 'обновлен'; ?>
-			<?php endif; ?>
+			<?php echo Account::getAuthMessage($account); ?>
 		</li>
 		<?php endforeach; ?>
 	</ul>
 </div>
 <?php endif; ?>
+<h4 class="ui horizontal divider header"><i class="add user icon"></i>Добавить</h4>
+<div class="ui icon message">
+	<i class="help circle outline icon"></i>
+	<div class="content">
+		<div class="header">
+			Как добавить аккаунт?
+		</div>
+		<p>Данные аккаунта необходимо передавать в формате <b>login:password</b>. Каждый аккаунт с новой строки</p>
+	</div>
+</div>
+<form class="ui form success" action="" method="post">
+	<div class="field">
+		<textarea name="accounts" placeholder="login:password&#13;&#10;login:password&#13;&#10;login:password&#13;&#10;..."></textarea>
+	</div>
+	<button type="submit" class="ui primary submit labeled icon button">
+		<i class="add user icon"></i>
+		Добавить
+	</button>
+</form>
 <?php if ($accounts): ?>
 <h4 class="ui horizontal divider header"><i class="users icon"></i>Текущие</h4>
 <table class="ui single line celled table">
@@ -49,6 +62,7 @@
 			<th>Имя</th>
 			<th>Логин</th>
 			<th>Статус</th>
+			<th>Причина</th>
 			<th>Перезайти</th>
 			<th>Удалить</th>
 		</tr>
@@ -58,7 +72,8 @@
 		<tr>
 			<td><?php echo $account->name; ?></td>
 			<td><?php echo $account->login; ?></td>
-			<td><?php echo $account->status ? 'Активен' : 'Не активен'; ?></td>
+			<td><?php echo $account->auth ? 'Активен' : 'Не активен'; ?></td>
+			<td><?php echo Account::getNonAuthCause($account); ?></td>
 			<td>
 				<form action="" method="post">
 					<input type="hidden" name="update" value="<?php echo $account->id; ?>">
@@ -81,12 +96,3 @@
 	</tbody>
 </table>
 <?php endif; ?>
-
-<h4 class="ui horizontal divider header"><i class="add user icon"></i>Добавить</h4>
-
-<form class="ui form success" action="" method="post">
-	<div class="field">
-		<textarea name="accounts"></textarea>
-	</div>
-	<button type="submit" class="ui primary submit button">Добавить</button>
-</form>

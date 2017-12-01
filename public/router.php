@@ -3,15 +3,15 @@
 session_start();
 
 $pages = [
-	'login' => 'Авторизация',
-	'exit' => 'Выход',
-	'404' => 'Страница не найдена',
-	'accounts' => 'Аккаунты',
-	'categories' => 'Категории',
-	'texts' => 'Тексты',
-	'settings' => 'Настройки',
-	'logs' => 'Логи',
-	'info' => 'Информация',
+	'login' => 'Avito: Авторизация',
+	'exit' => 'Avito: Выход',
+	'404' => 'Avito: Страница не найдена',
+	'accounts' => 'Avito: Аккаунты',
+	'categories' => 'Avito: Категории',
+	'texts' => 'Avito: Тексты',
+	'settings' => 'Avito: Настройки',
+	'logging' => 'Avito: Логи',
+	'info' => 'Avito: Информация',
 ];
 
 if (isset($_GET['route'])) {

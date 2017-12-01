@@ -33,7 +33,7 @@
 	</ul>
 </div>
 <?php endif; ?>
-<h4 class="ui horizontal divider header"><i class="add square icon"></i>Добавить</h4>
+<h4 class="ui horizontal divider header"><i class="checked calendar icon"></i>Добавить</h4>
 <form action="" method="post" class="ui labeled fluid action input">
 	<div class="ui label">https://</div>
 	<input type="text" name="link" placeholder="www.avito.ru/...">

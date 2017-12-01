@@ -9,16 +9,11 @@ if (isset($_POST['update'])) {
 		if (is_array($resultUpdate)) {
 			$insertResponse = $resultUpdate;
 		} else {
-			switch ($resultUpdate) {
-			case 1:
-				$error = 'Список аккаунтов составлен некорректно';
-				break;
-			case 2:
+			if (null === $resultAccounts) {
 				$error = 'Не удалось соеденитья с avito.ru. Попробуйте повторить попытку позже';
-				break;
-			default:
-				$error = 'Неизвестная ошибка. Попробуйте повторить попытку позже';
-		}
+			} else {
+				$error = 'Список аккаунтов составлен некорректно';
+			}
 		}
 	} else {
 		$error = 'Неизвестная ошибка. Попробуйте повторить попытку позже';
@@ -43,18 +38,13 @@ if (isset($_POST['accounts'])) {
 	if (is_array($resultAccounts)) {
 		$insertResponse = $resultAccounts;
 	} else {
-		switch ($resultAccounts) {
-			case 1:
-				$error = 'Список аккаунтов составлен некорректно';
-				break;
-			case 2:
-				$error = 'Не удалось соеденитья с avito.ru. Попробуйте повторить попытку позже';
-				break;
-			default:
-				$error = 'Неизвестная ошибка. Попробуйте повторить попытку позже';
+		if (null === $resultAccounts) {
+			$error = 'Не удалось соеденитья с avito.ru. Попробуйте повторить попытку позже';
+		} else {
+			$error = 'Список аккаунтов составлен некорректно';
 		}
 	}
 }
 
-$sql = "SELECT id, name, login, status FROM accounts";
+$sql = "SELECT id, name, login, auth, captcha, block, nologpas FROM accounts";
 $accounts = DB::connect()->query($sql)->fetchAll(PDO::FETCH_OBJ);
