@@ -27,12 +27,12 @@
 		<div class="header">
 			Как составить сообщение?
 		</div>
-		<p>Сообщение может содержать группы фраз-синонимов объединенных в квадратные скобки <b>[текст1|текст2|текст3]</b>. В результате будет подставлен один из вариантов, разделяемых прямой чертой.</p>
+		<p>Сообщение может содержать спинтаксы - группы фраз-синонимов объединенных в фигурные скобки <b>{текст1|текст2|текст3}</b>. В результате будет подставлен один из вариантов, разделяемых прямой чертой.</p>
 	</div>
 </div>
 <form class="ui form success" action="" method="post">
 	<div class="field">
-		<textarea name="text" placeholder="Пример [простого|несложного] текста"><?php if (!empty($_POST['text'])) echo $_POST['text']; elseif (!empty($text)) echo $text; ?></textarea>
+		<textarea name="text" placeholder="Пример {простого|несложного} текста"><?php if (!empty($text)) echo $text; ?></textarea>
 	</div>
 	<button type="submit" class="ui primary submit labeled icon button">
 		<i class="save icon"></i>
