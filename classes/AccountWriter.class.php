@@ -65,7 +65,7 @@ class AccountWriter
 	 * @return string Строка login:password
 	 * @return false Запись не была найдена
 	 */
-	public static function getAccount($id)
+	public static function getAccount($id = false)
 	{
 		if (!is_numeric($id)) {
 			return null;

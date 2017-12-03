@@ -7,7 +7,6 @@ define('CORE', __DIR__);
 define('APP', CORE.'/app');
 define('LOCKS', CORE.'/locks');
 define('CLASSES', CORE.'/classes');
-define('MODULES', CORE.'/modules');
 define('LOGS', CORE.'/logs');
 define('PUBL', CORE.'/public');
 define('PAGES', PUBL.'/pages');
@@ -17,23 +16,18 @@ define('CSS', 'public/style.css');
 define('ICO', 'public/favicon.ico');
 
 // Автозагрузка классов
-spl_autoload_register(function ($class) {
+$autoload = spl_autoload_register(function ($class) {
 	require CLASSES.'/'.$class.'.class.php';
 });
 
-// Автозагрузка модулей
-$autoload = spl_autoload_register(function ($class) {
-	require MODULES.'/'.$class.'.php';
-});
-
 if (!$autoload) {
-	Logger::file("|START|ERROR| - Неизвестный класс");
+	Logger::file("Неизвестный класс\n");
 	exit();
 }
 
 // Проверка зависимостей композера и автозагрузка
 if (!file_exists(COMPOSER) or is_dir(COMPOSER)) {
-	Logger::file("|START|ERROR| - Не установлены зависимости от composer");
+	Logger::file("Не установлены зависимости от composer\n");
 	exit();
 }
 require COMPOSER;

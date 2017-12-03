@@ -43,17 +43,15 @@ class Account
 	/**
 	 * Получение токенов со страницы для дальнейших действий
 	 *
-	 * @param string $flag Ключевое cлово страницы
+	 * @param string $link Ссылка на страницу с которой необходимо получить токены
 	 * @return null Не удалось соедениться с avito.ru
-	 * @return false Не удалось найти token и/или value
+	 * @return false Передан некорректный параметр
 	 * @return array Массив с ключами 'token' и 'value'
 	 */
-	private static function getToken($flag = 'auth')
+	public static function getToken($link = false, $sessid = false)
 	{
-		switch ($flag) {
-			case 'auth':
-				$link = 'https://www.avito.ru/profile/login';
-				break;
+		if (!is_string($link)) {
+			return false;
 		}
 		$options = [
 			CURLOPT_ENCODING => '',
@@ -64,7 +62,10 @@ class Account
 				"Upgrade-Insecure-Requests: 1",
 			],
 		];
-		//$captcha = false;
+		if (is_string($sessid)) {
+			$options[CURLOPT_COOKIE] = "sessid=$sessid; auth=1";
+			$options[CURLOPT_COOKIEJAR] = TEMP.'/cookie.txt';
+		}
 		$page = Request::curl($link, $options);
 		if (!is_string($page)) {
 			return null;
@@ -183,7 +184,7 @@ class Account
 	 * @return false Переданы некорректные параметры
 	 * @return array Массив данных об аккаунте
 	 */
-	private static function getInfo($sessid = false)
+	public static function getInfo($sessid = false)
 	{
 		if (!is_string($sessid)) {
 			return false;
@@ -250,7 +251,7 @@ class Account
 	 * 
 	 * Возвращаемый массив массивов аккаунтов со следующей информацией:
 	 * 
-	 * name - Имя владельца аккаунта. False - если некоектный логин или пароль либо каптча
+	 * name - Имя владельца аккаунта. False - если некорректный логин или пароль либо каптча
 	 * 
 	 * login - Логин
 	 * 
@@ -276,7 +277,7 @@ class Account
 		}
 		$results = [];
 		foreach ($accounts as $login => $password) {
-			$tokens = self::getToken('auth');
+			$tokens = self::getToken('https://www.avito.ru/profile/login');
 			if (!is_array($tokens)) {
 				// Не удалось соедениться с avito.ru
 				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false);
@@ -377,7 +378,7 @@ class Account
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неизвестная ошибка";
 			}
 		} else {
-			return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Ошибка соединения с базой данных. Попробуйте повторить ошибку позже";
+			return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Ошибка соединения с базой данных. Попробуйте повторить попытку позже";
 		}
 	}
 	

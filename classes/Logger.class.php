@@ -12,7 +12,7 @@ class Logger
 	 */
 	public static function console($message)
 	{
-		echo "[".date('H:i:s')."]: ".$message."\n";
+		echo "[".date('H:i:s')."]: ".mb_convert_encoding($message, 'UTF-8', 'auto')."\n";
 	}
 	
 	/**
@@ -22,7 +22,7 @@ class Logger
 	 */
 	public static function file($message)
 	{
-		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
+		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "<b>[".date('H:i:s')."]:</b> ".mb_convert_encoding($message, 'UTF-8', 'auto')."\r\n", FILE_APPEND);
 	}
 	
 	/**
@@ -33,7 +33,7 @@ class Logger
 	public static function send($message)
 	{
 		echo "[".date('H:i:s')."]: ".$message."\n";
-		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "[".date('H:i:s')."]: ".$message."\r\n", FILE_APPEND);
+		file_put_contents(self::dir()."/".date('Y-m-d').".txt", "<b>[".date('H:i:s')."]:</b> ".mb_convert_encoding($message, 'UTF-8', 'auto')."\r\n", FILE_APPEND);
 	}
 	
 	/**

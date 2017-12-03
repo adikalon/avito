@@ -32,7 +32,7 @@ class Request
 			if (!is_numeric($pause)) {
 				return 2;
 			}
-			sleep((int)$options['pause']);
+			sleep((int)$pause);
 		}
 		if ($link) {
 			$options[CURLOPT_URL] = $link;
