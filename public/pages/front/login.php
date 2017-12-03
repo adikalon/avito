@@ -13,7 +13,7 @@
 				<input type="text" name="login" placeholder="Логин">
 			</div>
 			<div class="field">
-				<input type="password" name="pass" placeholder="Пароль" value="afe72wmz">
+				<input type="password" name="pass" placeholder="Пароль">
 			</div>
 			<div class="field auth-enter">
 				<button class="positive ui button auth-button" type="submit">Войти</button>

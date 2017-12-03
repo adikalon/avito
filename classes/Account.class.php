@@ -57,6 +57,7 @@ class Account
 		}
 		$options = [
 			CURLOPT_ENCODING => '',
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -121,6 +122,7 @@ class Account
 			CURLOPT_POST => true,
 			CURLOPT_POSTFIELDS => "next=/profile&login=$login&password=$password&quick_expire=&token[$token]=$value",
 			CURLOPT_ENCODING => '',
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -190,6 +192,7 @@ class Account
 			CURLOPT_URL => 'https://www.avito.ru/profile',
 			CURLOPT_ENCODING => '',
 			CURLOPT_COOKIE => "sessid=$sessid; auth=1",
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",

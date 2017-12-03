@@ -6,9 +6,14 @@
 class Request
 {
 	/**
-	 * Стандартный User-Agent
+	 * User-Agent для неавторизированного состояния
 	 */
-	public static $userAgent = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36';
+	public static $unknownUserAgent = 'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36';
+	
+	/**
+	 * User-Agent для авторизированного состояния
+	 */
+	public static $namedUserAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36';
 
 	/**
 	 * Запрос CURL'ом
@@ -36,7 +41,7 @@ class Request
 			return 1;
 		}
 		if (!isset($options[CURLOPT_USERAGENT]) or empty($options[CURLOPT_USERAGENT])) {
-			$options[CURLOPT_USERAGENT] = self::$userAgent;
+			$options[CURLOPT_USERAGENT] = self::$unknownUserAgent;
 		}
 		$options[CURLOPT_RETURNTRANSFER] = true;
 		$curl = curl_init();

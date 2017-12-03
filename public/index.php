@@ -52,6 +52,7 @@ require_once PAGES . '/back/' . $page . '.php';
 			$('.message .close').on('click', function() {
 				$(this).closest('.message').transition('fade');
 			});
+			$('.ui.checkbox').checkbox();
 		</script>
 	</body>
 </html>
