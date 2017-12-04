@@ -11,7 +11,7 @@ $pages = [
 	'texts' => 'Avito: Тексты',
 	'settings' => 'Avito: Настройки',
 	'logging' => 'Avito: Логи',
-	'info' => 'Avito: Информация',
+	'info' => 'Avito: Справка',
 ];
 
 if (isset($_GET['route'])) {

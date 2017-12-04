@@ -76,23 +76,18 @@ class PrivateSender
 	public function start()
 	{
 		foreach ($this->categories as $category) {
-			$ads = $this->setAds($category);
-			foreach ($ads as $ad) {
-				$this->send($ad, $category);
-			}
+			$this->setAds($category);
 		}
 	}
 	
 	/**
-	 * Возвращает массив объявлений
+	 * Обходит страницы категории
 	 *
 	 * @param array $category Массив с информацией о категории
-	 * @return array Массив с информацией о категории
 	 */
 	private function setAds($category)
 	{
-		$ads = [];
-		Logger::send("Составление списка объявлений для категории: ".$category['name']."\n");
+		Logger::send("Рассылка по Категории <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n");
 		$n = 1;
 		while (true) {
 			if (!$this->isBlock()) {
@@ -113,7 +108,7 @@ class PrivateSender
 					"Upgrade-Insecure-Requests: 1",
 				],
 			];
-			$html = Request::curl(false, $options, rand(3, 7));
+			$html = Request::curl(false, $options, rand(1, 3));
 			preg_match('/.*Location.*blocked.*/', $html, $match);
 			if (isset($match[0]) and !empty($match[0])) {
 				Logger::send("Доступ к avito.ru временно заблокирован. Остановлено\n");
@@ -126,22 +121,22 @@ class PrivateSender
 			$hrefs = phpQuery::newDocument($html)->find('a.item-description-title-link');
 			foreach ($hrefs as $href) {
 				preg_match('/.*_(\d+)/', pq($href)->attr('href'), $match);
-				$ads[] = [
+				$ad = [
 					'title' => trim(pq($href)->text()),
 					'link' => 'https://www.avito.ru'.pq($href)->attr('href'),
 					'id' => $match[1],
 				];
+				$this->send($ad, $category);
 			}
 			$hrefs->unloadDocument();
 		}
-		return $ads;
 	}
 	
 	/**
 	 * Отправляет сообщения
 	 *
 	 * @param array $ad Массив с информацией об объявлении
-	 * @return array Массив с информацией о категории
+	 * @param array Массив с информацией о категории
 	 */
 	private function send($ad, $category)
 	{

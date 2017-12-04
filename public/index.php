@@ -37,7 +37,7 @@ require_once PAGES . '/back/' . $page . '.php';
 			</a>
 			<a class="<?php if ($page == 'info') echo 'active '; ?>item" href="info">
 				<i class="info circle icon"></i>
-				<span class="menu-text">Информация</span>
+				<span class="menu-text">Справка</span>
 			</a>
 			<div class="right menu">
 				<a class="item" href="exit"><i class="sign out icon"></i><span class="menu-text">Выход</span></a>

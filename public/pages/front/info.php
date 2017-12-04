@@ -1,6 +1,15 @@
 <div class="ui segment">
-	<h4 class="ui header">A header</h4>
-	<p>Te eum doming eirmod, nominati pertinacia argumentum ad his. Ex eam alia facete scriptorem, est autem aliquip detraxit at. Usu ocurreret referrentur at, cu epicurei appellantur vix. Cum ea laoreet recteque electram, eos choro alterum definiebas in. Vim dolorum definiebas an. Mei ex natum rebum iisque.</p>
-	<p>Audiam quaerendum eu sea, pro omittam definiebas ex. Te est latine definitiones. Quot wisi nulla ex duo. Vis sint solet expetenda ne, his te phaedrum referrentur consectetuer. Id vix fabulas oporteat, ei quo vide phaedrum, vim vivendum maiestatis in.</p>
-	<p>Eu quo homero blandit intellegebat. Incorrupte consequuntur mei id. Mei ut facer dolores adolescens, no illum aperiri quo, usu odio brute at. Qui te porro electram, ea dico facete utroque quo. Populo quodsi te eam, wisi everti eos ex, eum elitr altera utamur at. Quodsi convenire mnesarchum eu per, quas minimum postulant per id.</p>
+	<h4 class="ui header">Начало</h4>
+	<p>Для того, чтобы начать рассылку, необходимо запустить файл <b><?php echo APP; ?>/startPrivateSender.php</b>. Однако предварительно следует настроить несколько параметров: Добавить аккаунты, составить текст сообщения и заполнить список категорий. Не лишним будет установить желаемые параметры и в разделе настроек.</p>
+	<p>Файл <b><?php echo APP; ?>/startPrivateSender.php</b> желательно добавить в задания CRON'а.</p>
+	<h4 class="ui header">Управление</h4>
+	<p>Отключить/включить рассылку можно в разделе настроек, изменяя значение флага "Рассылка разрешена?".</p>
+	<p>При частом обращении к сайту avito.ru может возникать потребность во вводе каптчи. Это может происходить, как при авторизации аккаунтов, так и во время самой рассылки. Необходимо остановить рассылку на ~30 мин (настройки > Рассылка разрешена?). обычно этого достаточно, чтобы запросы на ввод каптчи прекратились.</p>
+	<p>Если аккаунт стал неактивным из-за каптчи, необходимо нажать на кнопку "Перезайти" в разделе аккаунтов.</p>
+	<p>Желательно установить параметр "Не ходить дальше N страницы категории" не в "0". Так скрипт не будет тратить время на обход категории полностью, а пройдет не дальше указанной страницы. Также это исключит рассылку авторам старых объявлений.</p>
+	<h4 class="ui header">Как составить текст сообщения?</h4>
+	<p>Сообщение может содержать спинтаксы - группы фраз-синонимов объединенные в фигурные скобки <b>{текст1|текст2|текст3}</b>. В результате будет выбран один из вариантов разделяемых прямой чертой. Можно указывать вложенные группы <b>{текст|{сообщение|запись}|текст3}</b>. Если необходимо указать на необязательность фразы, можно написать так: <b>{фраза|}</b> - фраза или пустая строка. В разделе составления текста, также показаны 3 возможных варианта конечного сообщения.</p>
+	<h4 class="ui header">Еще</h4>
+	<p>Пауза между отправкой сообщений, указывается в диапазоне от и до.</p>
+	<p>Весь ход работы скрипта логируется и сортируется по дате. Вся информация находится в разделе "Логи".</p>
 </div>
