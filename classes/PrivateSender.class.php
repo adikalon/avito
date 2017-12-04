@@ -139,7 +139,7 @@ class PrivateSender
 	 * Отправляет сообщения
 	 *
 	 * @param array $ad Массив с информацией об объявлении
-	 * @param array Массив с информацией о категории
+	 * @param array $category Массив с информацией о категории
 	 */
 	private function send($ad, $category)
 	{
@@ -150,6 +150,9 @@ class PrivateSender
 		$this->checkAuth();
 		$text = Text::rand($this->text);
 		$tokens = Account::getToken($ad['link'], $this->current['sessid']);
+		if (!is_array($tokens)) {
+			return null;
+		}
 		$options = [
 			CURLOPT_URL => 'https://www.avito.ru/items/write/'.$ad['id'],
 			CURLOPT_POST => true,
