@@ -11,6 +11,7 @@ define('LOCKS', CORE.'/locks');
 define('CLASSES', CORE.'/classes');
 define('LOGS', CORE.'/logs');
 define('PUBL', CORE.'/public');
+define('DOMEN', 'http://avito.loc/public');
 define('PAGES', PUBL.'/pages');
 define('DATABASES', CORE);
 define('COMPOSER', CORE.'/vendor/autoload.php');
@@ -31,6 +32,11 @@ if (!file_exists(COMPOSER) or is_dir(COMPOSER)) {
 	exit();
 }
 require COMPOSER;
+
+// Создание директории для логов
+if (!file_exists(LOGS) or !is_dir(LOGS)) {
+	mkdir(LOGS);
+}
 
 // Создание директории для хранения временных
 if (!file_exists(TEMP) or !is_dir(TEMP)) {

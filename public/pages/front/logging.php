@@ -3,7 +3,7 @@
 	<div class="four wide column">
 		<div class="ui vertical fluid tabular menu">
 			<?php foreach ($logs as $log): ?>
-			<a href="?log=<?php echo $log; ?>" class="item<?php if ($log == $current) echo ' active'; ?>"><?php echo $log; ?></a>
+			<a href="<?php echo DOMEN; ?>/?page=logging&log=<?php echo $log; ?>" class="item<?php if ($log == $current) echo ' active'; ?>"><?php echo $log; ?></a>
 			<?php endforeach; ?>
 	  </div>
 	</div>

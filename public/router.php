@@ -14,8 +14,9 @@ $pages = [
 	'info' => 'Avito: Справка',
 ];
 
-if (isset($_GET['route'])) {
-	$get=str_replace('/', '', $_GET['route']);
+if (isset($_GET['page'])) {
+	//$get=str_replace('/', '', $_GET['route']);
+	$get=$_GET['page'];
 	if (array_key_exists($get, $pages) and file_exists(PAGES.'/back/'.$get.'.php') and file_exists(PAGES.'/front/'.$get.'.php')) {
 		$page = $get;
 	} else {

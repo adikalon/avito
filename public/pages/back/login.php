@@ -7,7 +7,7 @@ if (isset($_POST['login']) and isset($_POST['pass'])) {
 	$user = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
 	if ($user and password_verify($pass, $user->pass)) {
 		$_SESSION['login'] = $user->login;
-		header('Location: accounts');
+		header('Location: '.DOMEN);
 	} else {
 		$error = 'Неправильный логин или пароль';
 	}
