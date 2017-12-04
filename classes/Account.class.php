@@ -83,7 +83,7 @@ class Account
 		if (!$token or !$value) {
 			return false;
 		}
-		if (strpos($page, 'button button-origin write-message-btn js-item-tooltip-trigger button-origin_full-width button-origin_large-extra') !== false) {
+		if (is_string($sessid) and strpos($page, 'button button-origin write-message-btn js-item-tooltip-trigger button-origin_full-width button-origin_large-extra') !== false) {
 			return false;
 		}
 		return [
