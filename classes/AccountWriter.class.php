@@ -29,7 +29,7 @@ class AccountWriter
 		}
 		$results = [];
 		foreach ($accounts as $account) {
-			if (!$account['name']) {
+			if (!$account['name'] and !$account['ip'] and !$account['reset'] and !$account['captcha'] and !$account['nologpas']) {
 				$results[] = self::getElemsIns($account, null, null);
 				continue;
 			}
@@ -45,6 +45,10 @@ class AccountWriter
 					$results[] = self::getElemsIns($account, false, false);
 				}
 			} else {
+				if (!$account['name']) {
+					$results[] = self::getElemsIns($account, null, null);
+					continue;
+				}
 				if (self::insert($account)) {
 					// Запись добавлена
 					$results[] = self::getElemsIns($account, true, true);
@@ -117,7 +121,9 @@ class AccountWriter
 		$captcha = $account['captcha'] ? 1 : 0;
 		$block = $account['block'] ? 1 : 0;
 		$nologpas = $account['nologpas'] ? 1 : 0;
-		$sql = "INSERT INTO accounts (name, login, password, sessid, auth, captcha, block, nologpas) VALUES ($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas)";
+		$ip = $account['ip'] ? 1 : 0;
+		$reset = $account['reset'] ? 1 : 0;
+		$sql = "INSERT INTO accounts (name, login, password, sessid, auth, captcha, block, nologpas, ip, reset) VALUES ($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset)";
 		return DB::connect()->exec($sql);
 	}
 	
@@ -142,10 +148,26 @@ class AccountWriter
 		$captcha = $account['captcha'] ? 1 : 0;
 		$block = $account['block'] ? 1 : 0;
 		$nologpas = $account['nologpas'] ? 1 : 0;
-		$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas WHERE id=$id";
+		$ip = $account['ip'] ? 1 : 0;
+		$reset = $account['reset'] ? 1 : 0;
+		if (!$account['name']) {
+			$sql = "UPDATE accounts SET password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset WHERE id=$id";
+		} else {
+			$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset WHERE id=$id";
+		}
 		return DB::connect()->exec($sql);
 	}
 	
+	public static function unknown($login = false)
+	{
+		if (!is_string($login)) {
+			return null;
+		}
+		$login = DB::connect()->quote($login);
+		$sql = "UPDATE accounts SET auth=0 WHERE login=$login";
+		return DB::connect()->exec($sql);
+	}
+
 	/**
 	 * Возвращает массив для заполнения в AccountWriter::insertOrUpdate()
 	 *
@@ -163,6 +185,8 @@ class AccountWriter
 			'captcha' => $account['captcha'],
 			'block' => $account['block'],
 			'nologpas' => $account['nologpas'],
+			'ip' => $account['ip'],
+			'reset' => $account['reset'],
 			'result' => $result,
 			'new' => $new
 		];

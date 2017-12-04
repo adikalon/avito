@@ -54,6 +54,6 @@ $lock = $factory->create('avito');
 try {
 	$lock->acquire();
 } catch (Exception $ex) {
-	Logger::send("Скрипт уже запущен\n");
+	Logger::send("Попытка повторного запуска. Скрипт уже запущен\n");
 	exit();
 }

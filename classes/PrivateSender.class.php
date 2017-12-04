@@ -151,6 +151,8 @@ class PrivateSender
 		$text = Text::rand($this->text);
 		$tokens = Account::getToken($ad['link'], $this->current['sessid']);
 		if (!is_array($tokens)) {
+			Logger::send("Нельзя отправить сообщение\n<b>Аккаунт:</b> ".$this->current['login']."\n<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n");
+			sleep(rand($this->pause['from'], $this->pause['to']));
 			return null;
 		}
 		$options = [

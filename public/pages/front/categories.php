@@ -40,7 +40,7 @@
 	<button type="submit" class="ui primary button">Добавить</button>
 </form>
 <?php if ($categories): ?>
-<h4 class="ui horizontal divider header"><i class="browser icon"></i>Категории</h4>
+<h4 class="ui horizontal divider header"><i class="browser icon"></i>Текущие</h4>
 <table class="ui single line celled table">
 	<thead>
 		<tr>

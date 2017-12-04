@@ -5,6 +5,7 @@ header('Content-type: text/html; charset=utf-8');
 // Основные константы
 define('CORE', __DIR__);
 define('APP', CORE.'/app');
+define('TEMP', CORE.'/temp');
 define('LOCKS', CORE.'/locks');
 define('CLASSES', CORE.'/classes');
 define('LOGS', CORE.'/logs');

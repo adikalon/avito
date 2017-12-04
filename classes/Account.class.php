@@ -46,7 +46,7 @@ class Account
 	 * @param string $link Ссылка на страницу с которой необходимо получить токены
 	 * @return null Не удалось соедениться с avito.ru
 	 * @return false Передан некорректный параметр
-	 * @return array Массив с ключами 'token' и 'value'
+	 * @return array Массив с ключами 'token', 'value' и 'ip'
 	 */
 	public static function getToken($link = false, $sessid = false)
 	{
@@ -55,6 +55,7 @@ class Account
 		}
 		$options = [
 			CURLOPT_ENCODING => '',
+			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -72,6 +73,11 @@ class Account
 		}
 		$token = false;
 		$value = false;
+		$ip = false;
+		preg_match('/.*Доступ временно ограничен.*/U', $page, $match);
+		if (isset($match[0]) and !empty($match[0])) {
+			$ip = true;
+		}
 		preg_match('/.*name="token\[(\d+)\].*/', $page, $match);
 		if (isset($match[1]) and !empty($match[1])) {
 			$token = $match[1];
@@ -80,15 +86,21 @@ class Account
 		if (isset($match[1]) and !empty($match[1])) {
 			$value = $match[1];
 		}
-		if (!$token or !$value) {
-			return false;
-		}
-		if (is_string($sessid) and strpos($page, 'button button-origin write-message-btn js-item-tooltip-trigger button-origin_full-width button-origin_large-extra') !== false) {
-			return false;
+//		if (!$token or !$value) {
+//			return false;
+//		}
+		if (is_string($sessid)) {
+			$searchText = phpQuery::newDocument($page)->find('button.write-message-btn.button-origin_large-extra')->eq(0);
+			$sendText = trim($searchText->text());
+			$searchText->unloadDocument();
+			if ($sendText != 'Написать сообщение' and $sendText != 'Откликнуться') {
+				return false;
+			}
 		}
 		return [
 			'token' => $token,
 			'value' => $value,
+			'ip' => $ip,
 		];
 	}
 	
@@ -144,9 +156,14 @@ class Account
 		$captcha = false;
 		$nologpas = false;
 		$name = false;
+		$reset = false;
 		preg_match('/.*Ваш аккаунт заблокирован.*/U', $page, $match);
 		if (isset($match[0]) and !empty($match[0])) {
 			$block = true;
+		}
+		preg_match('/.*В целях безопасности ваш пароль был сброшен.*/U', $page, $match);
+		if (isset($match[0]) and !empty($match[0])) {
+			$reset = true;
 		}
 		preg_match('/.*sessid=(.+);.*/U', $page, $match);
 		if (isset($match[1]) and !empty($match[1])) {
@@ -170,6 +187,7 @@ class Account
 			'sessid' => $sessid,
 			'captcha' => $captcha,
 			'nologpas' => $nologpas,
+			'reset' => $reset,
 		];
 	}
 	
@@ -235,7 +253,7 @@ class Account
 	 * @param boolean $nologpas True - Некорректный логин или пароль. False - корректный
 	 * @return array Массив параметров аккаунта
 	 */
-	private static function getElemsAuth($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas)
+	private static function getElemsAuth($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset)
 	{
 		return [
 			'name' => $name,
@@ -246,6 +264,8 @@ class Account
 			'captcha' => $captcha,
 			'block' => $block,
 			'nologpas' => $nologpas,
+			'ip' => $ip,
+			'reset' => $reset,
 		];
 	}
 
@@ -283,7 +303,12 @@ class Account
 			$tokens = self::getToken('https://www.avito.ru/profile/login');
 			if (!is_array($tokens)) {
 				// Не удалось соедениться с avito.ru
-				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false);
+				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
+				continue;
+			}
+			if ($tokens['ip']) {
+				// Доступ веменно ограничен по IP
+				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, true, false);
 				continue;
 			}
 			$token = $tokens['token'];
@@ -291,7 +316,7 @@ class Account
 			$sessid = self::getSessid($login, $password, $token, $value);
 			if (!is_array($sessid)) {
 				// Не удалось соедениться с avito.ru
-				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false);
+				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
 				continue;
 			}
 			$info = self::getInfo($sessid['sessid']);
@@ -305,7 +330,9 @@ class Account
 					false,
 					$sessid['captcha'],
 					$sessid['block'],
-					$sessid['nologpas']
+					$sessid['nologpas'],
+					false,
+					$sessid['reset']
 				);
 				continue;
 			}
@@ -317,7 +344,9 @@ class Account
 				$info['auth'],
 				$sessid['captcha'],
 				$sessid['block'],
-				$sessid['nologpas']
+				$sessid['nologpas'],
+				false,
+				$sessid['reset']
 			);
 		}
 		return $results;
@@ -363,21 +392,31 @@ class Account
 				if ($account['auth']) {
 					return "Аккаунт <b>".$account['login']."</b> авторизирован и ".($account['new'] ? "добавлен в базу" : "обновлен в базе");
 				} else {
-					if ($account['captcha']) {
+					if ($account['ip']) {
+						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Доступ временно заблокирован по IP";
+					} elseif ($account['reset']) {
+						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был был сброшен пароль";
+					} elseif ($account['captcha']) {
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был затребован ввод каптчи";
 					} elseif ($account['nologpas']) {
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неверный логин или пароль";
 					} else {
+						AccountWriter::unknown($account['login']);
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неизвестная ошибка";
 					}
 				}
 			}
 		} elseif (null === $account['result']) {
-			if ($account['captcha']) {
+			if ($account['ip']) {
+				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Доступ временно заблокирован по IP";
+			} elseif ($account['reset']) {
+				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был был сброшен пароль";
+			} elseif ($account['captcha']) {
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был затребован ввод каптчи";
 			} elseif ($account['nologpas']) {
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неверный логин или пароль";
 			} else {
+				AccountWriter::unknown($account['login']);
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неизвестная ошибка";
 			}
 		} else {
@@ -396,7 +435,11 @@ class Account
 		if ($account->auth) {
 			return '';
 		} else {
-			if ($account->captcha) {
+			if ($account->ip) {
+				return 'Блок по IP';
+			} elseif ($account->reset) {
+				return 'Сброшен пароль';
+			} elseif ($account->captcha) {
 				return 'Каптча';
 			} elseif ($account->nologpas) {
 				return 'Логин или пароль';
