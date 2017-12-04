@@ -120,6 +120,9 @@ class PrivateSender
 			}
 			$hrefs = phpQuery::newDocument($html)->find('a.item-description-title-link');
 			foreach ($hrefs as $href) {
+				if (strpos(pq($href)->attr('href'), 'redirect') !== false) {
+					continue;
+				}
 				preg_match('/.*_(\d+)/', pq($href)->attr('href'), $match);
 				$ad = [
 					'title' => trim(pq($href)->text()),
