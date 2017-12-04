@@ -87,7 +87,7 @@ class PrivateSender
 	 */
 	private function setAds($category)
 	{
-		Logger::send("Рассылка по Категории <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n");
+		Logger::send("Рассылка по категории <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n");
 		$n = 1;
 		while (true) {
 			if (!$this->isBlock()) {
