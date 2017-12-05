@@ -72,7 +72,7 @@ class PrivateSender
 			Logger::send("Отсутствует текст сообщения. Остановлено\n");
 			exit();
 		}
-		$this->current = $this->accounts[0];
+		$this->setRandAccount();
 	}
 	
 	public function __destruct()
@@ -165,7 +165,7 @@ class PrivateSender
 		$tokens = Account::getToken($ad['link'], $this->current['sessid']);
 		if (!is_array($tokens)) {
 			Logger::send("Нельзя отправить сообщение\n<b>Аккаунт:</b> ".$this->current['login']."\n<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n");
-			sleep($this->pause['from'], $this->pause['to']);
+			sleep(rand($this->pause['from'], $this->pause['to']));
 			return null;
 		}
 		$text = Text::rand($this->text);
@@ -220,6 +220,7 @@ class PrivateSender
 		$sql = "SELECT name, link FROM categories";
 		$catories = DB::connect()->query($sql)->fetchAll(PDO::FETCH_OBJ);
 		if (count($catories) > 0) {
+			$this->categories = [];
 			foreach ($catories as $catory) {
 				$this->categories[] = [
 					'name' => $catory->name,
@@ -243,6 +244,7 @@ class PrivateSender
 		$sql = "SELECT name, sessid, login, password FROM accounts WHERE auth=1";
 		$accounts = DB::connect()->query($sql)->fetchAll(PDO::FETCH_OBJ);
 		if (count($accounts) > 0) {
+			$this->accounts = [];
 			foreach ($accounts as $account) {
 				$this->accounts[] = [
 					'name' => $account->name,
@@ -344,19 +346,20 @@ class PrivateSender
 	private function checkAuth()
 	{
 		$info = Account::getInfo($this->current['sessid']);
-		if (is_array($info)) {
+		if (is_array($info) and $info['auth']) {
 			return true;
 		}
 		$auth = Account::setAccounts($this->current['login'].':'.$this->current['password']);
 		foreach ($auth as $aut) {
 			Logger::send(Account::getAuthMessage($aut)."\n");
+			sleep(rand($this->pause['from'], $this->pause['to']));
 			if ($aut['ip'] and $this->wait > 0) {
 				Logger::send("Доступ к <b>avito.ru</b> временно заблокирован по IP. Установлен запрет на запуск рассылки до <b>".date('H:i:s - d.m.Y', $this->setStamp())."</b>. Остановлено\n");
 				exit();
 			}
 		}
 		if ($this->isAccount()) {
-			$this->current = $this->accounts[0];
+			$this->setRandAccount();
 		} else {
 			Logger::send("Отсутствуют авторизированные аккаунты. Остановлено\n");
 			exit();
