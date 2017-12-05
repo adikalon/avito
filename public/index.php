@@ -15,32 +15,32 @@ require_once PAGES . '/back/' . $page . '.php';
 	<body>
 		<?php if (isset($_SESSION['login'])): ?>
 		<div class="ui labeled icon small menu">
-			<a class="<?php if ($page == 'accounts') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=accounts">
+			<a class="<?php if ($page == 'accounts') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=accounts">
 				<i class="users icon"></i>
 				<span class="menu-text">Аккаунты</span>
 			</a>
-			<a class="<?php if ($page == 'categories') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=categories">
+			<a class="<?php if ($page == 'categories') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=categories">
 				<i class="browser icon"></i>
 				<span class="menu-text">Категории</span>
 			</a>
-			<a class="<?php if ($page == 'texts') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=texts">
+			<a class="<?php if ($page == 'texts') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=texts">
 				<i class="write icon"></i>
 				<span class="menu-text">Тексты</span>
 			</a>
-			<a class="<?php if ($page == 'settings') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=settings">
+			<a class="<?php if ($page == 'settings') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=settings">
 				<i class="settings icon"></i>
 				<span class="menu-text">Настройки</span>
 			</a>
-			<a class="<?php if ($page == 'logging') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=logging">
+			<a class="<?php if ($page == 'logging') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=logging">
 				<i class="database icon"></i>
 				<span class="menu-text">Логи</span>
 			</a>
-			<a class="<?php if ($page == 'info') echo 'active '; ?>item" href="<?php echo DOMEN; ?>/?page=info">
+			<a class="<?php if ($page == 'info') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=info">
 				<i class="info circle icon"></i>
 				<span class="menu-text">Справка</span>
 			</a>
 			<div class="right menu">
-				<a class="item" href="<?php echo DOMEN; ?>/?page=exit"><i class="sign out icon"></i><span class="menu-text">Выход</span></a>
+				<a class="item" href="<?php echo DOMAIN; ?>/?page=exit"><i class="sign out icon"></i><span class="menu-text">Выход</span></a>
 			</div>
 		</div>
 		<?php endif; ?>
