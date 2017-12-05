@@ -105,7 +105,7 @@ class PrivateSender
 				exit();
 			}
 			$options = [
-				CURLOPT_URL => $category['link'].'?p='.$n,
+				CURLOPT_URL => $category['link'].'?p='.$n.'&s=104',
 				CURLOPT_ENCODING => '',
 				CURLOPT_HEADER => true,
 				CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
@@ -162,13 +162,13 @@ class PrivateSender
 			exit();
 		}
 		$this->checkAuth();
-		$text = Text::rand($this->text);
 		$tokens = Account::getToken($ad['link'], $this->current['sessid']);
 		if (!is_array($tokens)) {
 			Logger::send("Нельзя отправить сообщение\n<b>Аккаунт:</b> ".$this->current['login']."\n<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n");
-			sleep(rand($this->pause['from'], $this->pause['to']));
+			sleep($this->pause['from'], $this->pause['to']);
 			return null;
 		}
+		$text = Text::rand($this->text);
 		$options = [
 			CURLOPT_URL => 'https://www.avito.ru/items/write/'.$ad['id'],
 			CURLOPT_POST => true,

@@ -23,7 +23,12 @@ class Category
 		} elseif (strpos($link, 'https://') === false) {
 			return 'https://'.$link;
 		}
-		return $link;
+		$return = stristr($link, '?', true);
+		if (!$return) {
+			return $link;
+		} else {
+			return $return;
+		}
 	}
 	
 	/**
