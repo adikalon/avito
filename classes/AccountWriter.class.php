@@ -163,11 +163,11 @@ class AccountWriter
 	
 	public static function unknown($id = false)
 	{
-		if (!is_numeric($login)) {
+		if (!is_numeric($id)) {
 			return null;
 		}
-		$login = DB::connect()->quote($login);
-		$sql = "UPDATE accounts SET auth=0 WHERE id=$id";
+		$id = DB::connect()->quote($id);
+		$sql = "UPDATE accounts SET auth=0, captcha=0, block=0, nologpas=0, ip=0, reset=0 WHERE id=$id";
 		return DB::connect()->exec($sql);
 	}
 
