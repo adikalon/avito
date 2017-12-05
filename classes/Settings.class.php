@@ -29,6 +29,9 @@ class Settings
 		if ($pause['from'] < 0 or $pause['to'] < 0 or $break < 0 or $wait < 0) {
 			return false;
 		}
+		if ($pause['to'] < $pause['from']) {
+			return false;
+		}
 		return true;
 	}
 	
