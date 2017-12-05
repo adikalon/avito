@@ -15,18 +15,18 @@ class Settings
 	 * @return true Все параметры указаны верно
 	 * @return false Параметры указаны не верно
 	 */
-	public static function check($block = false, $random = false, $pause = false, $break = false)
+	public static function check($block = false, $random = false, $pause = false, $break = false, $wait = false)
 	{
-		if (!is_numeric($block) or !is_numeric($random) or !is_array($pause) or !is_numeric($break)) {
+		if (!is_numeric($block) or !is_numeric($random) or !is_array($pause) or !is_numeric($break) or !is_numeric($wait)) {
 			return false;
 		}
-		if ($block > 1 or $random > 1) {
+		if ($block > 1 or $random > 1 or $block < 0 or $random < 0) {
 			return false;
 		}
 		if (!isset($pause['from']) or !is_numeric($pause['from']) or !isset($pause['to']) or !is_numeric($pause['to'])) {
 			return false;
 		}
-		if ($pause['from'] < 0 or $pause['to'] < 0 or $break < 0) {
+		if ($pause['from'] < 0 or $pause['to'] < 0 or $break < 0 or $wait < 0) {
 			return false;
 		}
 		return true;
@@ -42,14 +42,15 @@ class Settings
 	 * @return true Сохранено в БД
 	 * @return false Проблемы с БД
 	 */
-	public static function write($block, $random, $pause, $break)
+	public static function write($block, $random, $pause, $break, $wait)
 	{
 		$block = DB::connect()->quote(trim($block));
 		$random = DB::connect()->quote(trim($random));
 		$pause_from = DB::connect()->quote(trim($pause['from']));
 		$pause_to = DB::connect()->quote(trim($pause['to']));
 		$break = DB::connect()->quote(trim($break));
-		$sql = "UPDATE settings SET block=$block, random=$random, pause_from=$pause_from, pause_to=$pause_to, break=$break";
+		$wait = DB::connect()->quote(trim($wait));
+		$sql = "UPDATE settings SET block=$block, random=$random, pause_from=$pause_from, pause_to=$pause_to, break=$break, wait=$wait";
 		if (DB::connect()->exec($sql)) {
 			return true;
 		} else {
@@ -68,13 +69,13 @@ class Settings
 	 * @return null Проблема с БД или переданы некорректные параметры
 	 * @return false Переданы некорректные параметры
 	 */
-	public static function set($block, $random, $pause, $break)
+	public static function set($block, $random, $pause, $break, $wait)
 	{
-		$check = self::check($block, $random, $pause, $break);
+		$check = self::check($block, $random, $pause, $break, $wait);
 		if (!$check) {
 			return false;
 		}
-		$write = self::write($block, $random, $pause, $break);
+		$write = self::write($block, $random, $pause, $break, $wait);
 		if (!$write) {
 			return null;
 		}

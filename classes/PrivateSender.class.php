@@ -40,11 +40,21 @@ class PrivateSender
 	 */
 	private $break = 0;
 	
+	/**
+	 * Время на которое будет запрещено выполнение рассылки в случае блока по IP
+	 */
+	private $wait = 0;
+	
 	public function __construct()
 	{
-		Logger::send("Запуск рассылки...\n");
+		Logger::send("Запуск...\n");
 		if (!$this->isBlock()) {
-			Logger::send("Рассылка запрещена. Остановлено\n");
+			Logger::send("Рассылка запрещена в админке. Остановлено\n");
+			exit();
+		}
+		$this->resetStamp();
+		if ($this->isStamp() !== true) {
+			Logger::send("Доступ к <b>avito.ru</b> временно заблокирован по IP. Установлен запрет на запуск рассылки до <b>".date('H:i:s - d.m.Y', $this->isStamp())."</b>. Остановлено\n");
 			exit();
 		}
 		if (!$this->isCategory()) {
@@ -67,7 +77,7 @@ class PrivateSender
 	
 	public function __destruct()
 	{
-		Logger::send("Расылка окончена\n");
+		Logger::send("Завершено\n");
 	}
 	
 	/**
@@ -91,7 +101,7 @@ class PrivateSender
 		$n = 1;
 		while (true) {
 			if (!$this->isBlock()) {
-				Logger::send("Рассылка запрещена. Остановлено\n");
+				Logger::send("Рассылка запрещена в админке. Остановлено\n");
 				exit();
 			}
 			$options = [
@@ -108,10 +118,14 @@ class PrivateSender
 					"Upgrade-Insecure-Requests: 1",
 				],
 			];
-			$html = Request::curl(false, $options, rand(1, 3));
+			$html = Request::curl(false, $options, rand($this->pause['from'], $this->pause['to']));
 			preg_match('/.*Location.*blocked.*/', $html, $match);
 			if (isset($match[0]) and !empty($match[0])) {
-				Logger::send("Доступ к avito.ru временно заблокирован. Остановлено\n");
+				if ($this->wait > 0) {
+					Logger::send("Доступ к <b>avito.ru</b> временно заблокирован по IP. Установлен запрет на запуск рассылки до <b>".date('H:i:s - d.m.Y', $this->setStamp())."</b>. Остановлено\n");
+				} else {
+					Logger::send("Доступ к <b>avito.ru</b> временно заблокирован по IP. Остановлено\n");
+				}
 				exit();
 			}
 			preg_match('/.*302 Found.*/', $html, $match);
@@ -144,7 +158,7 @@ class PrivateSender
 	private function send($ad, $category)
 	{
 		if (!$this->isBlock()) {
-			Logger::send("Рассылка запрещена. Остановлено\n");
+			Logger::send("Рассылка запрещена в админке. Остановлено\n");
 			exit();
 		}
 		$this->checkAuth();
@@ -244,6 +258,49 @@ class PrivateSender
 	}
 	
 	/**
+	 * Проверяет не установлена ли метка stamp позже текущего времени
+	 *
+	 * @return numeric Веменная метка - когда можно возобновить рассылку.Можно начинать рассылку
+	 * @return true Можно начинать рассылку
+	 */
+	private function isStamp()
+	{
+		$sql = "SELECT stamp FROM settings LIMIT 1";
+		$stamp = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
+		if ($stamp->stamp < time()) {
+			return true;
+		} else {
+			return $stamp->stamp;
+		}
+	}
+	
+	/**
+	 * Устанавливает временную метку до которой нельзя начинать рассылку
+	 *
+	 * @return numeric Временная метка, когдаможно будет начать рассылку
+	 */
+	private function setStamp()
+	{
+		$stamp = DB::connect()->quote($this->wait + time());
+		$sql = "UPDATE settings SET stamp=$stamp";
+		DB::connect()->exec($sql);
+		return $stamp;
+	}
+	
+	/**
+	 * Сбивает временную метку stamp если wait установлено в 0
+	 */
+	private function resetStamp()
+	{
+		$sql = "SELECT wait FROM settings LIMIT 1";
+		$settings = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
+		if ($settings->wait < 1) {
+			$sql = "UPDATE settings SET stamp=0";
+			DB::connect()->exec($sql);
+		}
+	}
+	
+	/**
 	 * Устанавливает настройки
 	 *
 	 * @return true Все прошло успешно
@@ -251,7 +308,7 @@ class PrivateSender
 	 */
 	private function setSettings()
 	{
-		$sql = "SELECT text, random, pause_from, pause_to, break FROM settings LIMIT 1";
+		$sql = "SELECT text, random, pause_from, pause_to, break, wait FROM settings LIMIT 1";
 		$settings = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
 		if (count($settings) > 0) {
 			$this->pause = [
@@ -260,6 +317,7 @@ class PrivateSender
 			];
 			$this->random = $settings->random;
 			$this->break = $settings->break;
+			$this->wait = $settings->wait;
 			if (empty($settings->text)) {
 				return null;
 			}
@@ -292,6 +350,10 @@ class PrivateSender
 		$auth = Account::setAccounts($this->current['login'].':'.$this->current['password']);
 		foreach ($auth as $aut) {
 			Logger::send(Account::getAuthMessage($aut)."\n");
+			if ($aut['ip'] and $this->wait > 0) {
+				Logger::send("Доступ к <b>avito.ru</b> временно заблокирован по IP. Установлен запрет на запуск рассылки до <b>".date('H:i:s - d.m.Y', $this->setStamp())."</b>. Остановлено\n");
+				exit();
+			}
 		}
 		if ($this->isAccount()) {
 			$this->current = $this->accounts[0];

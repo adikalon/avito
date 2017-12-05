@@ -35,7 +35,24 @@
 		</div>
 	</div>
 	<div class="field">
-		<label>Пауза между отправкой сообщения (в секундах)</label>
+		<label>Не ходить дальше N страницы категории (0 - обходить все)</label>
+		<div class="fields">
+			<div class="field">
+				<input type="number" name="break" placeholder="0" value="<?php echo $settings->break; ?>">
+			</div>
+		</div>
+	</div>
+	<?php if ($_SESSION['user']['role'] > 0): ?>
+	<div class="field">
+		<label>На сколько запретить рассылку в случае блока по IP (в секундах) (0 - не запрещать)</label>
+		<div class="fields">
+			<div class="field">
+				<input type="number" name="wait" placeholder="0" value="<?php echo $settings->wait; ?>">
+			</div>
+		</div>
+	</div>
+	<div class="field">
+		<label>Пауза между отправкой сообщения (используется и для запроса проверки на доступ к сайту) (в секундах)</label>
 		<div class="fields">
 			<div class="field">
 				<input type="number" name="pause[from]" placeholder="От" value="<?php echo $settings->pause_from; ?>">
@@ -45,14 +62,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="field">
-		<label>Не ходить дальше N страницы категории (0 - обходить все)</label>
-		<div class="fields">
-			<div class="field">
-				<input type="number" name="break" placeholder="0" value="<?php echo $settings->break; ?>">
-			</div>
-		</div>
-	</div>
+	<?php endif; ?>
 	<button type="submit" name="set" class="ui primary submit labeled icon button">
 		<i class="save icon"></i>
 		Сохранить
