@@ -71,4 +71,16 @@ class Logs
 			return str_replace("\n", "<br>", $text);
 		}
 	}
+	
+	public static function deletes()
+	{
+		foreach(new DirectoryIterator(LOGS) as $item) {
+			if (!$item->isDot() and $item->isFile() and $item->getExtension() == 'txt') {
+				if (!unlink($item->getPathname())) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
 }
