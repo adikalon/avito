@@ -29,13 +29,16 @@ class AccountWriter
 		}
 		$results = [];
 		foreach ($accounts as $account) {
-			if (!$account['name'] and !$account['ip'] and !$account['reset'] and !$account['captcha'] and !$account['nologpas']) {
-				$results[] = self::getElemsIns($account, null, null);
-				continue;
-			}
 			$login = DB::connect()->quote($account['login']);
 			$sql = "SELECT id FROM accounts WHERE login=$login LIMIT 1";
 			$acc = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
+			if (!$account['name'] and !$account['ip'] and !$account['reset'] and !$account['captcha'] and !$account['nologpas']) {
+				$results[] = self::getElemsIns($account, null, null);
+				if ($acc) {
+					self::unknown($acc->id);
+				}
+				continue;
+			}
 			if ($acc) {
 				if (self::update($acc->id, $account)) {
 					// Запись обновлена
@@ -158,13 +161,13 @@ class AccountWriter
 		return DB::connect()->exec($sql);
 	}
 	
-	public static function unknown($login = false)
+	public static function unknown($id = false)
 	{
-		if (!is_string($login)) {
+		if (!is_numeric($login)) {
 			return null;
 		}
 		$login = DB::connect()->quote($login);
-		$sql = "UPDATE accounts SET auth=0 WHERE login=$login";
+		$sql = "UPDATE accounts SET auth=0 WHERE id=$id";
 		return DB::connect()->exec($sql);
 	}
 

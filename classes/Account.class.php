@@ -86,14 +86,11 @@ class Account
 		if (isset($match[1]) and !empty($match[1])) {
 			$value = $match[1];
 		}
-//		if (!$token or !$value) {
-//			return false;
-//		}
 		if (is_string($sessid)) {
 			$searchText = phpQuery::newDocument($page)->find('button.write-message-btn.button-origin_large-extra')->eq(0);
 			$sendText = trim($searchText->text());
 			$searchText->unloadDocument();
-			if ($sendText != 'Написать сообщение' and $sendText != 'Откликнуться') {
+			if (strpos($sendText, 'Написать сообщение') === false and strpos($sendText, 'Откликнуться') === false) {
 				return false;
 			}
 		}
@@ -401,7 +398,6 @@ class Account
 					} elseif ($account['nologpas']) {
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неверный логин или пароль";
 					} else {
-						AccountWriter::unknown($account['login']);
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неизвестная ошибка";
 					}
 				}
@@ -416,7 +412,6 @@ class Account
 			} elseif ($account['nologpas']) {
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неверный логин или пароль";
 			} else {
-				AccountWriter::unknown($account['login']);
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Неизвестная ошибка";
 			}
 		} else {
