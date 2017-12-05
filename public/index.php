@@ -13,7 +13,7 @@ require_once PAGES . '/back/' . $page . '.php';
 		<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 	</head>
 	<body>
-		<?php if (isset($_SESSION['login'])): ?>
+		<?php if (isset($_SESSION['user'])): ?>
 		<div class="ui labeled icon small menu">
 			<a class="<?php if ($page == 'accounts') echo 'active '; ?>item" href="<?php echo DOMAIN; ?>/?page=accounts">
 				<i class="users icon"></i>

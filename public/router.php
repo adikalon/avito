@@ -15,7 +15,6 @@ $pages = [
 ];
 
 if (isset($_GET['page'])) {
-	//$get=str_replace('/', '', $_GET['route']);
 	$get=$_GET['page'];
 	if (array_key_exists($get, $pages) and file_exists(PAGES.'/back/'.$get.'.php') and file_exists(PAGES.'/front/'.$get.'.php')) {
 		$page = $get;
@@ -26,10 +25,10 @@ if (isset($_GET['page'])) {
 	$page = 'accounts';
 }
 
-if (!isset($_SESSION['login'])) {
+if (!isset($_SESSION['user'])) {
 	$page = 'login';
 }
 
-if ($page == 'login' and isset($_SESSION['login'])) {
+if ($page == 'login' and isset($_SESSION['user'])) {
 	$page = '404';
 }

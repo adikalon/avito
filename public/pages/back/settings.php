@@ -2,7 +2,7 @@
 
 // Смена пароля
 if (isset($_POST['oldpass']) and isset($_POST['newpass']) and isset($_POST['renewpass'])) {
-	$check = Password::rePass($_SESSION['login'], $_POST['oldpass'], $_POST['newpass'], $_POST['renewpass']);
+	$check = Password::rePass($_SESSION['user']['login'], $_POST['oldpass'], $_POST['newpass'], $_POST['renewpass']);
 	if ($check === true) {
 		$success = 'Пароль изменен';
 	} elseif ($check == 1) {
