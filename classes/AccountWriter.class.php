@@ -32,13 +32,6 @@ class AccountWriter
 			$login = DB::connect()->quote($account['login']);
 			$sql = "SELECT id FROM accounts WHERE login=$login LIMIT 1";
 			$acc = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
-			if (!$account['name'] and !$account['ip'] and !$account['reset'] and !$account['captcha'] and !$account['nologpas']) {
-				$results[] = self::getElemsIns($account, null, null);
-				if ($acc) {
-					self::unknown($acc->id);
-				}
-				continue;
-			}
 			if ($acc) {
 				if (self::update($acc->id, $account)) {
 					// Запись обновлена
@@ -49,7 +42,7 @@ class AccountWriter
 				}
 			} else {
 				if (!$account['name']) {
-					$results[] = self::getElemsIns($account, null, null);
+					$results[] = self::getElemsIns($account, null, true);
 					continue;
 				}
 				if (self::insert($account)) {
@@ -158,16 +151,6 @@ class AccountWriter
 		} else {
 			$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset WHERE id=$id";
 		}
-		return DB::connect()->exec($sql);
-	}
-	
-	public static function unknown($id = false)
-	{
-		if (!is_numeric($id)) {
-			return null;
-		}
-		$id = DB::connect()->quote($id);
-		$sql = "UPDATE accounts SET auth=0, captcha=0, block=0, nologpas=0, ip=0, reset=0 WHERE id=$id";
 		return DB::connect()->exec($sql);
 	}
 
