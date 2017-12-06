@@ -20,7 +20,7 @@ if (isset($_POST['set'])) {
 	$settings = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
 	$block = isset($_POST['block']) ? 1 : 0;
 	$random = isset($_POST['random']) ? 1 : 0;
-	$pause = isset($_POST['pause']) ? $_POST['pause'] : ['pause_from' => $settings->pause_from, 'pause_to' => $settings->pause_to];
+	$pause = isset($_POST['pause']) ? $_POST['pause'] : ['from' => $settings->pause_from, 'to' => $settings->pause_to];
 	$break = isset($_POST['break']) ? $_POST['break'] : $settings->break;
 	$wait = isset($_POST['wait']) ? $_POST['wait'] : $settings->wait;
 	$set = Settings::set($block, $random, $pause, $break, $wait);
