@@ -12,13 +12,21 @@ class Settings
 	 * @param numeric $random Выбирать произвольный аккаунт или нет. 1 - да. 0 - нет
 	 * @param array $pause Пауза между отправкой сообщения (в секундах). Элемент массива from - от. to - до
 	 * @param numeric $break Дальше какой страницы категории не ходить
+	 * @param numeric $wait Время запрета рассылки в случаек блока по ip (в секундах)
+	 * @param string $token токен от anti-captcha.com
 	 * @return true Все параметры указаны верно
 	 * @return false Параметры указаны не верно
+	 * @return null Несуществующий токен anti-captcha.com
 	 */
-	public static function check($block = false, $random = false, $pause = false, $break = false, $wait = false)
+	public static function check($block = false, $random = false, $pause = false, $break = false, $wait = false, $token = false)
 	{
-		if (!is_numeric($block) or !is_numeric($random) or !is_array($pause) or !is_numeric($break) or !is_numeric($wait)) {
+		if (!is_numeric($block) or !is_numeric($random) or !is_array($pause) or !is_numeric($break) or !is_numeric($wait) or !is_string($token)) {
 			return false;
+		}
+		if (!empty(trim($token))) {
+			if (!AntiCaptcha::check($token)) {
+				return null;
+			}
 		}
 		if ($block > 1 or $random > 1 or $block < 0 or $random < 0) {
 			return false;
@@ -42,10 +50,12 @@ class Settings
 	 * @param numeric $random Выбирать произвольный аккаунт или нет. 1 - да. 0 - нет
 	 * @param array $pause Пауза между отправкой сообщения (в секундах). Элемент массива from - от. to - до
 	 * @param numeric $break Дальше какой страницы категории не ходить
+	 * @param numeric $wait Время запрета рассылки в случаек блока по ip (в секундах)
+	 * @param string $token токен от anti-captcha.com
 	 * @return true Сохранено в БД
 	 * @return false Проблемы с БД
 	 */
-	public static function write($block, $random, $pause, $break, $wait)
+	public static function write($block, $random, $pause, $break, $wait, $token)
 	{
 		$block = DB::connect()->quote(trim($block));
 		$random = DB::connect()->quote(trim($random));
@@ -53,7 +63,8 @@ class Settings
 		$pause_to = DB::connect()->quote(trim($pause['to']));
 		$break = DB::connect()->quote(trim($break));
 		$wait = DB::connect()->quote(trim($wait));
-		$sql = "UPDATE settings SET block=$block, random=$random, pause_from=$pause_from, pause_to=$pause_to, break=$break, wait=$wait";
+		$token = DB::connect()->quote(trim($token));
+		$sql = "UPDATE settings SET block=$block, random=$random, pause_from=$pause_from, pause_to=$pause_to, break=$break, wait=$wait, token=$token";
 		if (DB::connect()->exec($sql)) {
 			return true;
 		} else {
@@ -69,18 +80,19 @@ class Settings
 	 * @param array $pause Пауза между отправкой сообщения (в секундах). Элемент массива from - от. to - до
 	 * @param numeric $break Дальше какой страницы категории не ходить
 	 * @return true Сохранено в БД
-	 * @return null Проблема с БД или переданы некорректные параметры
 	 * @return false Переданы некорректные параметры
+	 * @return null Несуществующий токен anti-captcha.com
+	 * @return 0 Проблема с БД или переданы некорректные параметры
 	 */
-	public static function set($block, $random, $pause, $break, $wait)
+	public static function set($block, $random, $pause, $break, $wait, $token)
 	{
-		$check = self::check($block, $random, $pause, $break, $wait);
+		$check = self::check($block, $random, $pause, $break, $wait, $token);
 		if (!$check) {
-			return false;
+			return $check;
 		}
-		$write = self::write($block, $random, $pause, $break, $wait);
+		$write = self::write($block, $random, $pause, $break, $wait, $token);
 		if (!$write) {
-			return null;
+			return 0;
 		}
 		return true;
 	}

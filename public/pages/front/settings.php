@@ -42,6 +42,14 @@
 			</div>
 		</div>
 	</div>
+	<div class="field">
+		<label>Токен от anti-captcha.ru<?php if (is_numeric($balance)) echo '. Баланс: $'.$balance; ?></label>
+		<div class="fields">
+			<div class="field">
+				<input type="text" name="token" placeholder="xxx..." value="<?php echo $settings->token; ?>">
+			</div>
+		</div>
+	</div>
 	<?php if ($_SESSION['user']['role'] > 0): ?>
 	<div class="field">
 		<label>На сколько запретить рассылку в случае блока по IP (в секундах) (0 - не запрещать)</label>
