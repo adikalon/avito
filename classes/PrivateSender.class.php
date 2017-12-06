@@ -169,7 +169,12 @@ class PrivateSender
 		$tokens = Account::getToken($ad['link'], $this->current['sessid']);
 		if (!is_array($tokens)) {
 			sleep(rand($this->pause['from'], $this->pause['to']));
-			Logger::send("Нельзя отправить сообщение\n<b>Аккаунт:</b> ".$this->current['login']."\n<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n");
+			Logger::send(
+				"Нельзя отправить сообщение\n".
+				"<b>Аккаунт:</b> ".$this->current['login']."\n".
+				"<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n".
+				"<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n"
+			);
 			return null;
 		}
 		$text = Text::rand($this->text);
@@ -180,17 +185,47 @@ class PrivateSender
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_ENCODING => '',
 			CURLOPT_POSTFIELDS => "token[".$tokens['token']."]=".$tokens['value']."&comment=".$text,
-			CURLOPT_HTTPHEADER => Request::$namedUserAgent,
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_COOKIE => "sessid=".$this->current['sessid']."; auth=1",
 			CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-				"Upgrade-Insecure-Requests: 1",
+				"origin:https://www.avito.ru",
+				"referer: ".$ad['link'],
+				"x-requested-with: XMLHttpRequest",
 			],
 		];
 		Request::curl(false, $options, rand($this->pause['from'], $this->pause['to']));
-		Logger::send("Отправлено сообщение\n<b>Аккаунт:</b> ".$this->current['login']."\n<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n<b>Сообщение:</b> ".$text."\n");
+		$options = [
+			CURLOPT_URL => 'https://www.avito.ru/cv/history/item/'.$ad['id'],
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HEADER => true,
+			CURLOPT_NOBODY => true,
+			CURLOPT_ENCODING => '',
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
+			CURLOPT_COOKIE => "sessid=".$this->current['sessid']."; auth=1",
+			CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
+			CURLOPT_HTTPHEADER => [
+				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+				"referer: ".$ad['link'],
+				"x-requested-with: XMLHttpRequest",
+			],
+		];
+		$moderate = Request::curl(false, $options, rand(1, 3));
+		$warning = '';
+		if (strpos($moderate, '400 Bad Request') !== false) {
+			$warning = "<b>Предупреждение:</b> Сообщение отправлено на модерацию и возможно не будет получено адресатом. Рекомендуется сменить аккаунт\n";
+		}
+		Logger::send(
+			"Отправлено сообщение\n".
+			$warning.
+			"<b>Аккаунт:</b> ".$this->current['login']."\n".
+			"<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n".
+			"<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n<b>Сообщение:</b> ".$text."\n"
+		);
 		if ($this->random > 0) {
 			$this->setRandAccount();
 		}
