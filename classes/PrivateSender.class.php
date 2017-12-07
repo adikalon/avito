@@ -196,7 +196,10 @@ class PrivateSender
 				"x-requested-with: XMLHttpRequest",
 			],
 		];
-		Request::curl(false, $options, rand($this->pause['from'], $this->pause['to']));
+		if (!empty($this->current['proxy'])) {
+			$options[CURLOPT_PROXY] = $this->current['proxy'];
+		}
+		$send = Request::curl(false, $options, rand($this->pause['from'], $this->pause['to']));
 		$options = [
 			CURLOPT_URL => 'https://www.avito.ru/cv/history/item/'.$ad['id'],
 			CURLOPT_RETURNTRANSFER => true,
@@ -214,7 +217,19 @@ class PrivateSender
 				"x-requested-with: XMLHttpRequest",
 			],
 		];
+		if (!empty($this->current['proxy'])) {
+			$options[CURLOPT_PROXY] = $this->current['proxy'];
+		}
 		$moderate = Request::curl(false, $options, rand(1, 3));
+		if ((!is_string($moderate) or empty($moderate) or !is_string($send) or empty($send)) and !empty($this->current['proxy'])) {
+			Logger::send(
+				"Сообщение может быть не отправлено. Вероятно неработоспособный прокси-сервер\n".
+				"<b>Аккаунт:</b> ".$this->current['login']."\n".
+				"<b>Категория:</b> <a target='_blank' href='".$category['link']."'>".$category['name']."</a>\n".
+				"<b>Объявление:</b> <a target='_blank' href='".$ad['link']."'>".$ad['title']."</a>\n<b>Сообщение:</b> ".$text."\n"
+			);
+			return null;
+		}
 		$warning = '';
 		if (strpos($moderate, '400 Bad Request') !== false) {
 			$warning = "<b>Предупреждение:</b> Сообщение отправлено на модерацию и возможно не будет получено адресатом. Рекомендуется сменить аккаунт\n";
@@ -280,7 +295,7 @@ class PrivateSender
 	 */
 	private function isAccount()
 	{
-		$sql = "SELECT name, sessid, login, password FROM accounts WHERE auth=1";
+		$sql = "SELECT name, sessid, login, password, proxy FROM accounts WHERE auth=1";
 		$accounts = DB::connect()->query($sql)->fetchAll(PDO::FETCH_OBJ);
 		if (count($accounts) > 0) {
 			$this->accounts = [];
@@ -290,6 +305,7 @@ class PrivateSender
 					'sessid' => $account->sessid,
 					'login' => $account->login,
 					'password' => $account->password,
+					'proxy' => $account->proxy,
 				];
 			}
 			return true;
@@ -384,11 +400,15 @@ class PrivateSender
 	 */
 	private function checkAuth()
 	{
-		$info = Account::getInfo($this->current['sessid']);
-		if (is_array($info) and $info['auth']) {
+		$info = Account::getInfo($this->current['sessid'], $this->current['proxy']);
+		if ($info['auth']) {
 			return true;
 		}
-		$auth = Account::setAccounts($this->current['login'].':'.$this->current['password']);
+		$request = $this->current['login'].':'.$this->current['password'];
+		if (!empty($this->current['proxy'])) {
+			$request = $this->current['login'].':'.$this->current['password'].'{'.$this->current['proxy'].'}';
+		}
+		$auth = Account::setAccounts($request);
 		foreach ($auth as $aut) {
 			Logger::send(Account::getAuthMessage($aut)."\n");
 			sleep(rand($this->pause['from'], $this->pause['to']));

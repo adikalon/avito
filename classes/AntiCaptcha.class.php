@@ -211,7 +211,7 @@ class AntiCaptcha
 			return false;
 		}
 		$check = json_decode($check);
-		if (!is_object($chek)) {
+		if (!is_object($check)) {
 			return false;
 		}
 		if ($check->errorId > 0) {

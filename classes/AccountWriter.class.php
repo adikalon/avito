@@ -58,7 +58,7 @@ class AccountWriter
 	}
 	
 	/**
-	 * Получить строку аккаунта login:password из БД по ID
+	 * Получить строку аккаунта login:password{proxy} из БД по ID
 	 *
 	 * @param numeric $id Идентификатор записи в БД
 	 * @return null Передан неверный параметр
@@ -71,10 +71,14 @@ class AccountWriter
 			return null;
 		}
 		$id = DB::connect()->quote($id);
-		$sql = "SELECT login, password FROM accounts WHERE id=$id LIMIT 1";
+		$sql = "SELECT login, password, proxy FROM accounts WHERE id=$id LIMIT 1";
 		$account = DB::connect()->query($sql)->fetch(PDO::FETCH_OBJ);
 		if (!$account) {
 			return false;
+		}
+		if (!empty($account->proxy)) {
+			$proxy = '{'.$account->proxy.'}';
+			return "$account->login:$account->password".$proxy;
 		}
 		return "$account->login:$account->password";
 	}
@@ -112,6 +116,7 @@ class AccountWriter
 		$name = DB::connect()->quote($account['name']);
 		$login = DB::connect()->quote($account['login']);
 		$password = DB::connect()->quote($account['password']);
+		$proxy = DB::connect()->quote($account['proxy']);
 		$sessid = DB::connect()->quote($account['sessid']);
 		$auth = $account['auth'] ? 1 : 0;
 		$captcha = $account['captcha'] ? 1 : 0;
@@ -119,7 +124,8 @@ class AccountWriter
 		$nologpas = $account['nologpas'] ? 1 : 0;
 		$ip = $account['ip'] ? 1 : 0;
 		$reset = $account['reset'] ? 1 : 0;
-		$sql = "INSERT INTO accounts (name, login, password, sessid, auth, captcha, block, nologpas, ip, reset) VALUES ($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset)";
+		$http = $account['http'] ? 1 : 0;
+		$sql = "INSERT INTO accounts (name, login, password, proxy, sessid, auth, captcha, block, nologpas, ip, reset, http) VALUES ($name, $login, $password, $proxy, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset, $http)";
 		return DB::connect()->exec($sql);
 	}
 	
@@ -139,6 +145,7 @@ class AccountWriter
 		$name = DB::connect()->quote($account['name']);
 		$login = DB::connect()->quote($account['login']);
 		$password = DB::connect()->quote($account['password']);
+		$proxy = DB::connect()->quote($account['proxy']);
 		$sessid = DB::connect()->quote($account['sessid']);
 		$auth = $account['auth'] ? 1 : 0;
 		$captcha = $account['captcha'] ? 1 : 0;
@@ -146,10 +153,11 @@ class AccountWriter
 		$nologpas = $account['nologpas'] ? 1 : 0;
 		$ip = $account['ip'] ? 1 : 0;
 		$reset = $account['reset'] ? 1 : 0;
+		$http = $account['http'] ? 1 : 0;
 		if (!$account['name']) {
-			$sql = "UPDATE accounts SET password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset WHERE id=$id";
+			$sql = "UPDATE accounts SET password=$password, proxy=$proxy, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset, http=$http WHERE id=$id";
 		} else {
-			$sql = "UPDATE accounts SET name=$name, password=$password, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset WHERE id=$id";
+			$sql = "UPDATE accounts SET name=$name, password=$password, proxy=$proxy, sessid=$sessid, auth=$auth, captcha=$captcha, block=$block, nologpas=$nologpas, ip=$ip, reset=$reset, http=$http WHERE id=$id";
 		}
 		return DB::connect()->exec($sql);
 	}
@@ -173,6 +181,7 @@ class AccountWriter
 			'nologpas' => $account['nologpas'],
 			'ip' => $account['ip'],
 			'reset' => $account['reset'],
+			'http' => $account['http'],
 			'result' => $result,
 			'new' => $new
 		];

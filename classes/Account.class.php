@@ -18,8 +18,8 @@ class Account
 	/**
 	 * Парсит список аккаунтов переданных строкой
 	 *
-	 * @param string $accounts Список аккаунтов в формате login:pass
-	 * @return array Массив с логинами и паролями
+	 * @param string $accounts Список аккаунтов в формате login:pass{127.0.0.1:80}
+	 * @return array Массив с логинами, паролями и прокси
 	 * @return false В случае некорректно составленой строки
 	 */
 	public static function parse($accounts)
@@ -32,16 +32,32 @@ class Account
 		$accounts = explode("\n", $accounts);
 		foreach ($accounts as $account) {
 			$symbols = substr_count($account, ':');
-			if ($symbols != 1) {
+			if ($symbols < 1) {
 				return false;
 			}
-			$divide = explode(':', $account);
-			$login = trim($divide[0]);
-			$pass = trim($divide[1]);
-			if (empty($login) or empty($pass)) {
+			$login = trim(stristr($account, ':', true));
+			if (empty($login)) {
 				return false;
 			}
-			$result[$login] = $pass;
+			$passProxy = trim(substr(stristr($account, ':'), 1));
+			$reg = '{((?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?):\d{2,5})}';
+			preg_match($reg, $passProxy, $match);
+			if (isset($match[1]) and !empty($match[1])) {
+				$proxy = $match[1];
+				$password = trim(str_replace(['{', '}', $proxy], '', $passProxy));
+			} else {
+				$password = trim($passProxy);
+				$proxy = '';
+			}
+			if (empty($password)) {
+				return false;
+			}
+			
+			$result[] = [
+				'login' => $login,
+				'password' => $password,
+				'proxy' => $proxy,
+			];
 		}
 		if (empty($result)) {
 			return false;
@@ -54,9 +70,9 @@ class Account
 	 *
 	 * @param string $link Ссылка на страницу с которой необходимо получить токены
 	 * @param string $sessid Не обязательный параметр. Для проверки на возможность отправлять сообщение автору объявления
+	 * @param string $proxy Прокси сервер
 	 * @return false Передан некорректный параметр.
 	 * Если передана $sessid, может также вернуть false, если возможность отправлять сообщение автору отсутствует
-	 * @return null Не удалось соедениться с avito.ru
 	 * @return array Массив с ключами:
 	 * 
 	 * token - токен
@@ -64,8 +80,10 @@ class Account
 	 * value - значение токена
 	 * 
 	 * ip - true, если доступ ограничен по ip или false, если разрешен
+	 * 
+	 * http - True - прокси умерла. False - жива
 	 */
-	public static function getToken($link = false, $sessid = false)
+	public static function getToken($link = false, $sessid = false, $proxy = false)
 	{
 		if (!is_string($link)) {
 			return false;
@@ -73,6 +91,7 @@ class Account
 		$options = [
 			CURLOPT_ENCODING => '',
 			CURLOPT_FOLLOWLOCATION => true,
+			CURLOPT_HEADER => true,
 			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
@@ -84,13 +103,17 @@ class Account
 			$options[CURLOPT_COOKIE] = "sessid=$sessid; auth=1";
 			$options[CURLOPT_COOKIEJAR] = TEMP.'/category.txt';
 		}
-		$page = Request::curl($link, $options);
-		if (!is_string($page)) {
-			return null;
+		if (is_string($proxy) and !empty($proxy)) {
+			$options[CURLOPT_PROXY] = $proxy;
 		}
+		$page = Request::curl($link, $options);
+		$http = false;
 		$token = false;
 		$value = false;
 		$ip = false;
+		if (!is_string($page) or empty($page)) {
+			$http = true;
+		}
 		preg_match('/.*Доступ временно ограничен.*/U', $page, $match);
 		if (isset($match[0]) and !empty($match[0])) {
 			$ip = true;
@@ -112,6 +135,7 @@ class Account
 			}
 		}
 		return [
+			'http' => $http,
 			'token' => $token,
 			'value' => $value,
 			'ip' => $ip,
@@ -125,8 +149,8 @@ class Account
 	 * @param string $password Пароль
 	 * @param string $token Ключ токена полученный из Acount::getToken()
 	 * @param string $value Значение токена полученное из Acount::getToken()
-	 * @param string $captcha Код капчи. Метод передает его рекурсивно, если возникла необходимость
-	 * @return null Не удалось соедениться с avito.ru
+	 * @param string $captcha Код капчи
+	 * @param string $proxy Прокси сервер
 	 * @return false Переданы некорректные параметры
 	 * @return array Массив данных об авторизации:
 	 * 
@@ -139,8 +163,10 @@ class Account
 	 * captcha - Строка капчи или false, если ее не было
 	 * 
 	 * nologpas - True - если неверные логин или пароль. False - такой ошибки не обнаружено
+	 * 
+	 * http - True - прокси умерла. False - жива
 	 */
-	private static function getSessid($login = false, $password = false, $token = false, $value = false, $captcha = false)
+	private static function getSessid($login = false, $password = false, $token = false, $value = false, $captcha = false, $proxy = false)
 	{
 		if (!is_string($login) or !is_string($password) or !is_string($token) or !is_string($value)) {
 			return false;
@@ -164,16 +190,20 @@ class Account
 			"Referer: https://www.avito.ru/profile/login",
 			"Upgrade-Insecure-Requests: 1",
 		];
-		$page = Request::curl(false, $options);
-		if (!is_string($page)) {
-			return null;
+		if (is_string($proxy) and !empty($proxy)) {
+			$options[CURLOPT_PROXY] = $proxy;
 		}
+		$page = Request::curl(false, $options);
+		$http = false;
 		$block = false;
 		$sessid = false;
 		$captcha = false;
 		$nologpas = false;
 		$name = false;
 		$reset = false;
+		if (!is_string($page) or empty($page)) {
+			$http = true;
+		}
 		preg_match('/.*Ваш аккаунт заблокирован.*/U', $page, $match);
 		if (isset($match[0]) and !empty($match[0])) {
 			$block = true;
@@ -205,12 +235,13 @@ class Account
 			$nologpas = true;
 		}
 		return [
+			'http' => $http,
 			'name' => $name,
 			'block' => $block,
 			'sessid' => $sessid,
 			'captcha' => $captcha,
 			'nologpas' => $nologpas,
-			'reset' => $reset,
+			'reset' => $reset
 		];
 	}
 	
@@ -218,15 +249,17 @@ class Account
 	 * Получение информации о статусе аккаунта и его владельце
 	 * 
 	 * @param string $sessid Строка sessid полученная методом Account::getSessid()
-	 * @return null Не удалось соедениться с avito.ru
+	 * @param string $proxy Прокси сервер
 	 * @return false Передан некорректные параметры
 	 * @return array Массив данных об аккаунте:
 	 * 
 	 * name - Имя владельца аккаунта. False - не удалось получить имя
 	 * 
 	 * auth - True - авторизировался. False - не удалось авторизироваться
+	 * 
+	 * http - True - прокси умерла. False - жива
 	 */
-	public static function getInfo($sessid = false)
+	public static function getInfo($sessid = false, $proxy = false)
 	{
 		if (!is_string($sessid)) {
 			return false;
@@ -234,6 +267,7 @@ class Account
 		$options = [
 			CURLOPT_URL => 'https://www.avito.ru/profile',
 			CURLOPT_ENCODING => '',
+			CURLOPT_HEADER => true,
 			CURLOPT_COOKIE => "sessid=$sessid; auth=1",
 			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_HTTPHEADER => [
@@ -244,9 +278,15 @@ class Account
 				"Upgrade-Insecure-Requests: 1",
 			],
 		];
+		if (is_string($proxy) and !empty($proxy)) {
+			$options[CURLOPT_PROXY] = $proxy;
+		}
 		$page = Request::curl(false, $options);
-		if (!is_string($page)) {
-			return null;
+		$http = false;
+		$auth = false;
+		$name = false;
+		if (!is_string($page) or empty($page)) {
+			$http = true;
 		}
 		$auth = false;
 		$name = false;
@@ -256,6 +296,7 @@ class Account
 			$auth = true;
 		}
 		return [
+			'http' => $http,
 			'name' => $name,
 			'auth' => $auth,
 		];
@@ -267,6 +308,7 @@ class Account
 	 * @param mixed $name Имя владельца аккаунта. False - в случае неудачной авторизации
 	 * @param string $login Логин аккаунта
 	 * @param string $password Пароль аккаунта
+	 * @param string $proxy Прокси сервер
 	 * @param mixed $sessid Sessid для авторизации по cookies. False - не получено
 	 * @param boolean $auth True - Аккаунт авторизирован. False - не авторизирован
 	 * @param boolean $captcha True - Была запрошена каптча. False - каптча не запрашивалась
@@ -274,14 +316,16 @@ class Account
 	 * @param boolean $nologpas True - Некорректный логин или пароль. False - корректный
 	 * @param boolean $ip True - Заблокирован доступ по IP. False - не заблокирован
 	 * @param boolean $reset True - Сброшен пароль у аккаунта. False - не сброшен
+	 * @param boolean $http True - прокси умерла. False - жива
 	 * @return array Массив параметров аккаунта с одноименными именами ключей
 	 */
-	private static function getElemsAuth($name, $login, $password, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset)
+	private static function getElemsAuth($name, $login, $password, $proxy, $sessid, $auth, $captcha, $block, $nologpas, $ip, $reset, $http)
 	{
 		return [
 			'name' => $name,
 			'login' => $login,
 			'password' => $password,
+			'proxy' => $proxy,
 			'sessid' => $sessid,
 			'auth' => $auth,
 			'captcha' => $captcha,
@@ -289,6 +333,7 @@ class Account
 			'nologpas' => $nologpas,
 			'ip' => $ip,
 			'reset' => $reset,
+			'http' => $http
 		];
 	}
 
@@ -305,6 +350,8 @@ class Account
 	 * 
 	 * password - Пароль
 	 * 
+	 * proxy - Прокси
+	 * 
 	 * sessid - Sessid для авторизации. False - если не удалось связаться с avito.ru
 	 * 
 	 * auth - True - авторизирован. False - не авторизирован
@@ -318,6 +365,8 @@ class Account
 	 * ip - True - доступ заблокирован по IP. False - не заблокирован
 	 * 
 	 * reset - True - сброшен пароль аккаунта. False - не получена информация
+	 * 
+	 * http - True - прокси умерла. False - жива
 	 */
 	public static function auth($accounts = false)
 	{
@@ -325,24 +374,43 @@ class Account
 			return false;
 		}
 		$results = [];
-		foreach ($accounts as $login => $password) {
-			$tokens = self::getToken('https://www.avito.ru/profile/login');
-			if (!is_array($tokens)) {
-				// Не удалось соедениться с avito.ru
-				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
-				continue;
-			}
-			if ($tokens['ip']) {
-				// Доступ веменно ограничен по IP
-				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, true, false);
+		foreach ($accounts as $account) {
+			$tokens = self::getToken('https://www.avito.ru/profile/login', false, $account['proxy']);
+			if ($tokens['http'] or $tokens['ip']) {
+				$results[] = self::getElemsAuth(
+					false,
+					$account['login'],
+					$account['password'],
+					$account['proxy'],
+					false,
+					false,
+					false,
+					false,
+					false,
+					$tokens['ip'],
+					false,
+					$tokens['http']
+				);
 				continue;
 			}
 			$token = $tokens['token'];
 			$value = $tokens['value'];
-			$sessid = self::getSessid($login, $password, $token, $value);
-			if (!is_array($sessid)) {
-				// Не удалось соедениться с avito.ru
-				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
+			$sessid = self::getSessid($account['login'], $account['password'], $token, $value, false, $account['proxy']);
+			if ($sessid['http']) {
+				$results[] = self::getElemsAuth(
+					false,
+					$account['login'],
+					$account['password'],
+					$account['proxy'],
+					false,
+					false,
+					false,
+					false,
+					false,
+					$tokens['ip'],
+					false,
+					$sessid['http']
+				);
 				continue;
 			}
 			if ($sessid['captcha'] !== false) {
@@ -352,51 +420,61 @@ class Account
 					if (!is_string($code)) {
 						break;
 					}
-					$tokens = self::getToken('https://www.avito.ru/profile/login');
-					if (!is_array($tokens)) {
-						// Не удалось соедениться с avito.ru
-						$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
-						continue 2;
-					}
-					if ($tokens['ip']) {
-						// Доступ веменно ограничен по IP
-						$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, true, false);
-						continue 2;
+					// Лепим по второму кругу. Пусть уже так будет
+					$tokens = self::getToken('https://www.avito.ru/profile/login', false, $account['proxy']);
+					if ($tokens['http'] or $tokens['ip']) {
+						$results[] = self::getElemsAuth(
+							false,
+							$account['login'],
+							$account['password'],
+							$account['proxy'],
+							false,
+							false,
+							false,
+							false,
+							false,
+							$tokens['ip'],
+							false,
+							$tokens['http']
+						);
+						continue;
 					}
 					$token = $tokens['token'];
 					$value = $tokens['value'];
-
-					$sessid = self::getSessid($login, $password, $token, $value, $code);
+					$sessid = self::getSessid($account['login'], $account['password'], $token, $value, $code, $account['proxy']);
+					if ($sessid['http']) {
+						$results[] = self::getElemsAuth(
+							false,
+							$account['login'],
+							$account['password'],
+							$account['proxy'],
+							false,
+							false,
+							false,
+							false,
+							false,
+							$tokens['ip'],
+							false,
+							$sessid['http']
+						);
+						continue;
+					}
 				} while ($sessid['captcha'] !== false);
 			}
-			$info = self::getInfo($sessid['sessid']);
-			if (!is_array($info)) {
-				// Не удалось соедениться с avito.ru
-				$results[] = self::getElemsAuth(
-					$sessid['name'],
-					$login,
-					$password,
-					$sessid['sessid'],
-					false,
-					$sessid['captcha'],
-					$sessid['block'],
-					$sessid['nologpas'],
-					false,
-					$sessid['reset']
-				);
-				continue;
-			}
+			$info = self::getInfo($sessid['sessid'], $account['proxy']);
 			$results[] = self::getElemsAuth(
 				$info['name'],
-				$login,
-				$password,
+				$account['login'],
+				$account['password'],
+				$account['proxy'],
 				$sessid['sessid'],
 				$info['auth'],
 				$sessid['captcha'],
 				$sessid['block'],
 				$sessid['nologpas'],
-				false,
-				$sessid['reset']
+				$tokens['ip'],
+				$sessid['reset'],
+				$info['http']
 			);
 		}
 		return $results;
@@ -429,6 +507,8 @@ class Account
 	 * result - True - записано в БД. False - ошибка соединения с БД. Null - не пыталось записывать (вероятно невернлый логин или пароль)
 	 * 
 	 * new - Новая или обновленная запись. True - новая. False - обновленная
+	 * 
+	 * http - True - прокси умерла. False - жива
 	 */
 	public static function setAccounts($accounts)
 	{
@@ -462,7 +542,9 @@ class Account
 				if ($account['auth']) {
 					return "Аккаунт <b>".$account['login']."</b> авторизирован и ".($account['new'] ? "добавлен в базу" : "обновлен в базе");
 				} else {
-					if ($account['ip']) {
+					if ($account['http']) {
+						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Вероятно неработоспособный прокси-сервер";
+					} elseif ($account['ip']) {
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Доступ временно заблокирован по IP";
 					} elseif ($account['reset']) {
 						return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был был сброшен пароль";
@@ -476,7 +558,9 @@ class Account
 				}
 			}
 		} elseif (null === $account['result']) {
-			if ($account['ip']) {
+			if ($account['http']) {
+				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Вероятно неработоспособный прокси-сервер";
+			} elseif ($account['ip']) {
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Доступ временно заблокирован по IP";
 			} elseif ($account['reset']) {
 				return "Аккаунт <b>".$account['login']."</b> не удалось авторизировать. Был был сброшен пароль";
@@ -503,7 +587,9 @@ class Account
 		if ($account->auth) {
 			return '';
 		} else {
-			if ($account->ip) {
+			if ($account->http) {
+				return 'Прокси';
+			} elseif ($account->ip) {
 				return 'Блок по IP';
 			} elseif ($account->reset) {
 				return 'Сброшен пароль';

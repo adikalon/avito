@@ -42,12 +42,12 @@
 		<div class="header">
 			Как добавить аккаунт?
 		</div>
-		<p>Данные аккаунта необходимо передавать в формате <b>login:password</b>. Каждый аккаунт с новой строки</p>
+		<p>Данные аккаунта необходимо передавать в формате <b>login:password</b>. Каждый аккаунт с новой строки. Привязать HTTP прокси сервер: <b>login:password{127.0.0.1:8080}</b></p>
 	</div>
 </div>
 <form class="ui form success" action="" method="post">
 	<div class="field">
-		<textarea name="accounts" placeholder="login:password&#13;&#10;login:password&#13;&#10;login:password&#13;&#10;..."></textarea>
+		<textarea name="accounts" placeholder="login:password&#13;&#10;login:password{127.0.0.1:8080}&#13;&#10;login:password&#13;&#10;..."></textarea>
 	</div>
 	<button type="submit" class="ui primary submit labeled icon button">
 		<i class="add user icon"></i>
@@ -61,6 +61,7 @@
 		<tr>
 			<th>Имя</th>
 			<th>Логин</th>
+			<th>Прокси</th>
 			<th>Статус</th>
 			<th>Причина</th>
 			<th>Перезайти</th>
@@ -72,6 +73,7 @@
 		<tr>
 			<td><?php echo $account->name; ?></td>
 			<td><?php echo $account->login; ?></td>
+			<td><?php echo $account->proxy; ?></td>
 			<td><?php echo $account->auth ? 'Активен' : 'Не активен'; ?></td>
 			<td><?php echo Account::getNonAuthCause($account); ?></td>
 			<td>

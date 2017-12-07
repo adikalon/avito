@@ -46,5 +46,5 @@ if (isset($_POST['accounts'])) {
 	}
 }
 
-$sql = "SELECT id, name, login, auth, captcha, block, nologpas, ip, reset FROM accounts";
+$sql = "SELECT id, name, login, proxy, auth, captcha, block, nologpas, ip, reset, http FROM accounts";
 $accounts = DB::connect()->query($sql)->fetchAll(PDO::FETCH_OBJ);
