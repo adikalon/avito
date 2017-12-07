@@ -417,7 +417,7 @@ class Account
 				do {
 					$code = AntiCaptcha::decode($sessid['captcha']);
 					// Если вернулась не строка - отпускаем аккаунт без антикапчи
-					if (!is_string($code)) {
+					if (!is_array($code)) {
 						break;
 					}
 					// Лепим по второму кругу. Пусть уже так будет
@@ -441,7 +441,7 @@ class Account
 					}
 					$token = $tokens['token'];
 					$value = $tokens['value'];
-					$sessid = self::getSessid($account['login'], $account['password'], $token, $value, $code, $account['proxy']);
+					$sessid = self::getSessid($account['login'], $account['password'], $token, $value, $code['code'], $account['proxy']);
 					if ($sessid['http']) {
 						$results[] = self::getElemsAuth(
 							false,
@@ -458,6 +458,9 @@ class Account
 							$sessid['http']
 						);
 						continue;
+					}
+					if ($sessid['captcha'] !== false and !AntiCaptcha::report($code['token'], $code['id'])) {
+						break;
 					}
 				} while ($sessid['captcha'] !== false);
 			}

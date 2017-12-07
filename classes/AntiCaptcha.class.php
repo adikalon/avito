@@ -197,6 +197,7 @@ class AntiCaptcha
 		if (!is_string($token) or empty($token)) {
 			return null;
 		}
+		$token = trim($token);
 		$options = [
 			CURLOPT_URL => 'https://api.anti-captcha.com/getBalance',
 			CURLOPT_POST => true,
@@ -221,16 +222,57 @@ class AntiCaptcha
 	}
 	
 	/**
+	 * Отправить жалобуна неразгаданную каптчу
+	 *
+	 * @param string $token Токен
+	 * @param numeric $task id задания
+	 * @return true жалоба принята
+	 * @return false Не удалось соедениться с anti-captcha.com
+	 * @return null Переданы некорректные параметры
+	 */
+	public static function report($token = false, $task = false)
+	{
+		if (!is_string($token) and !is_numeric($task)) {
+			return null;
+		}
+		$token = trim($token);
+		$options = [
+			CURLOPT_URL => 'https://api.anti-captcha.com/reportIncorrectImageCaptcha',
+			CURLOPT_POST => true,
+			CURLOPT_POSTFIELDS => '{"clientKey":"'.$token.'", "taskId": '.$task.'}',
+			CURLOPT_HTTPHEADER => [
+				'Accept: application/json',
+				'Content-Type: application/json'
+			]
+		];
+		$report = Request::curl(false, $options);
+		if (!is_string($report)) {
+			return false;
+		}
+		$report = json_decode($report);
+		if (!is_object($report)) {
+			return false;
+		}
+		if ($report->errorId > 0) {
+			return false;
+		}
+		if ($report->status == 'success') {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
 	 * Собирательный метод. Использует все необходимые методы для разгадки капчи
 	 *
 	 * @param string $img Ссылка на картинку капчи
 	 * @param string $token Токен от anti-captcha.ru
-	 * @return string Код капчи
 	 * @return false Переданы некорректные параметры
 	 * @return 1 На балансе anti-captcha.ru закончились деньги
 	 * @return 2 Некорректный токен
 	 * @return 3 Неизвестная ошибка
 	 * @return null Токен не установлен. Разгадка не запустилась
+	 * @return array code - код разгаданной капчи. id - идентификатор задания. token - токен
 	 */
 	public static function decode($id = false)
 	{
@@ -271,6 +313,10 @@ class AntiCaptcha
 		if (!$result) {
 			return 3;
 		}
-		return $result;
+		return [
+			'code' => $result,
+			'id' => $id,
+			'token' => $token
+		];
 	}
 }
