@@ -13,7 +13,7 @@ class AntiCaptcha
 	/**
 	 * Ставит на задание в anti-captcha.ru и возвращает id задания
 	 *
-	 * @param string $img Ссылка на картинку капчи
+	 * @param string $img Ресурс картинки в base64
 	 * @param string $token Токен от anti-captcha.ru
 	 * @return numeric Id задания
 	 * @return false Переданы некорректные параметры или неудалось соедениться с anti-captcha.ru
@@ -25,8 +25,6 @@ class AntiCaptcha
 			return false;
 		}
 		$token = trim($token);
-		$img = trim($img);
-		$img = base64_encode(file_get_contents($img));
 		$json = '{
 			"clientKey":"'.$token.'",
 			"task": {
@@ -54,12 +52,52 @@ class AntiCaptcha
 			return false;
 		}
 		$task = json_decode($task);
+		if (!is_object($task)) {
+			return false;
+		}
 		if ($task->errorId == 10) {
 			return null;
 		} elseif ($task->errorId > 0) {
 			return false;
 		}
 		return $task->taskId;
+	}
+	
+	/**
+	 * Отдает картинку кодированную в base64
+	 *
+	 * @param string $id Id капчи
+	 * @param string $token Токен от anti-captcha.ru
+	 * @return string кодарованная в base64 картинка
+	 * @return false Переданы некорректные параметры
+	 * @return null От сервера пришел не ресурс
+	 */
+	public static function img($id = false)
+	{
+		if (!is_numeric($id)) {
+			return false;
+		}
+		$options = [
+			CURLOPT_URL => "https://www.avito.ru/captcha?$id",
+			CURLOPT_USERAGENT => Request::$namedUserAgent,
+			CURLOPT_COOKIEFILE => TEMP.'/account.txt',
+			CURLOPT_COOKIEJAR => TEMP.'/account.txt',
+			CURLOPT_HTTPHEADER => [
+				":authority: www.avito.ru",
+				":method: GET",
+				":path: /captcha?$id",
+				":scheme: https",
+				"accept-encoding: gzip, deflate, br",
+				"accept-language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+				"accept: image/webp,image/apng,image/*,*/*;q=0.8",
+				"referer: https://www.avito.ru/profile/login"
+			]
+		];
+		$resource = Request::curl(false, $options);
+		if (!is_string($resource)) {
+			return null;
+		}
+		return base64_encode($resource);
 	}
 	
 	/**
@@ -96,6 +134,9 @@ class AntiCaptcha
 			return false;
 		}
 		$result = json_decode($result);
+		if (!is_object($result)) {
+			return false;
+		}
 		if ($result->errorId > 0) {
 			return false;
 		}
@@ -134,6 +175,9 @@ class AntiCaptcha
 			return 0;
 		}
 		$chek = json_decode($chek);
+		if (!is_object($chek)) {
+			return 0;
+		}
 		if ($chek->errorId > 0) {
 			return false;
 		}
@@ -145,12 +189,12 @@ class AntiCaptcha
 	 *
 	 * @param string $token Токен
 	 * @return string Сумма баланса на счету
-	 * @return false Несуществующий токен anti-captcha.com
-	 * @return null Не удалось соедениться с anti-captcha.com
+	 * @return false Не удалось соедениться с anti-captcha.com
+	 * @return null Некорректный или пустой параметр
 	 */
 	public static function balance($token = false)
 	{
-		if (!is_string($token)) {
+		if (!is_string($token) or empty($token)) {
 			return null;
 		}
 		$options = [
@@ -162,15 +206,18 @@ class AntiCaptcha
 				'Content-Type: application/json'
 			]
 		];
-		$chek = Request::curl(false, $options);
-		if (!is_string($chek)) {
-			return null;
-		}
-		$chek = json_decode($chek);
-		if ($chek->errorId > 0) {
+		$check = Request::curl(false, $options);
+		if (!is_string($check)) {
 			return false;
 		}
-		return $chek->balance;
+		$check = json_decode($check);
+		if (!is_object($chek)) {
+			return false;
+		}
+		if ($check->errorId > 0) {
+			return false;
+		}
+		return $check->balance;
 	}
 	
 	/**
@@ -185,9 +232,9 @@ class AntiCaptcha
 	 * @return 3 Неизвестная ошибка
 	 * @return null Токен не установлен. Разгадка не запустилась
 	 */
-	public static function decode($img = false)
+	public static function decode($id = false)
 	{
-		if (!is_string($img)) {
+		if (!is_numeric($id)) {
 			return false;
 		}
 		$sql = "SELECT token FROM settings LIMIT 1";
@@ -197,8 +244,14 @@ class AntiCaptcha
 			return null;
 		}
 		$chek = self::check($token);
-		if ($chek !== true) {
+		if ($chek === 0) {
+			return 3;
+		} elseif ($chek !== true) {
 			return 2;
+		}
+		$img = self::img($id);
+		if (!$img) {
+			return 3;
 		}
 		$id = self::id($img, $token);
 		if ($id === null) {

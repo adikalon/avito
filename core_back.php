@@ -28,7 +28,7 @@ if (!file_exists(LOGS) or !is_dir(LOGS)) {
 	mkdir(LOGS);
 }
 
-// Создание директории для хранения временных
+// Создание директории для хранения временных файлов
 if (!file_exists(TEMP) or !is_dir(TEMP)) {
 	mkdir(TEMP);
 }

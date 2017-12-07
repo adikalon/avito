@@ -22,7 +22,8 @@ class Logs
 		if (empty($logs)) {
 			return null;
 		}
-		return array_reverse($logs);
+		rsort($logs);
+		return $logs;
 	}
 	
 	/**

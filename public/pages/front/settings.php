@@ -43,7 +43,7 @@
 		</div>
 	</div>
 	<div class="field">
-		<label>Токен от anti-captcha.ru<?php if (is_numeric($balance)) echo '. Баланс: $'.$balance; ?></label>
+		<label>Токен от anti-captcha.ru<?php if (is_numeric($balance)) echo '. Баланс: $'.$balance; elseif ($balance === false) echo '. Нет соединения'; ?></label>
 		<div class="fields">
 			<div class="field">
 				<input type="text" name="token" placeholder="xxx..." value="<?php echo $settings->token; ?>">

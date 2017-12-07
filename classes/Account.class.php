@@ -5,7 +5,16 @@
  */
 class Account
 {
+	/**
+	 * временное хранилище для sessid
+	 */
+	private static $sessid = '';
 	
+	/**
+	 * временное хранилище для имени
+	 */
+	private static $name = '';
+
 	/**
 	 * Парсит список аккаунтов переданных строкой
 	 *
@@ -73,7 +82,7 @@ class Account
 		];
 		if (is_string($sessid)) {
 			$options[CURLOPT_COOKIE] = "sessid=$sessid; auth=1";
-			$options[CURLOPT_COOKIEJAR] = TEMP.'/cookie.txt';
+			$options[CURLOPT_COOKIEJAR] = TEMP.'/category.txt';
 		}
 		$page = Request::curl($link, $options);
 		if (!is_string($page)) {
@@ -116,6 +125,7 @@ class Account
 	 * @param string $password Пароль
 	 * @param string $token Ключ токена полученный из Acount::getToken()
 	 * @param string $value Значение токена полученное из Acount::getToken()
+	 * @param string $captcha Код капчи. Метод передает его рекурсивно, если возникла необходимость
 	 * @return null Не удалось соедениться с avito.ru
 	 * @return false Переданы некорректные параметры
 	 * @return array Массив данных об авторизации:
@@ -126,29 +136,33 @@ class Account
 	 * 
 	 * sessid - Для авторизации по cookies
 	 * 
-	 * captcha - True - если была запрошена каптча. False - каптчи не было
+	 * captcha - Строка капчи или false, если ее не было
 	 * 
 	 * nologpas - True - если неверные логин или пароль. False - такой ошибки не обнаружено
 	 */
-	private static function getSessid($login = false, $password = false, $token = false, $value = false)
+	private static function getSessid($login = false, $password = false, $token = false, $value = false, $captcha = false)
 	{
 		if (!is_string($login) or !is_string($password) or !is_string($token) or !is_string($value)) {
 			return false;
 		}
-		$options = [
-			CURLOPT_URL => 'https://www.avito.ru/profile/login',
-			CURLOPT_HEADER => true,
-			CURLOPT_POST => true,
-			CURLOPT_POSTFIELDS => "next=/profile&login=$login&password=$password&quick_expire=&token[$token]=$value",
-			CURLOPT_ENCODING => '',
-			CURLOPT_USERAGENT => Request::$namedUserAgent,
-			CURLOPT_HTTPHEADER => [
-				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
-				"Origin: https://www.avito.ru",
-				"Referer: https://www.avito.ru/profile/login",
-				"Upgrade-Insecure-Requests: 1",
-			],
+		$options[CURLOPT_URL] = 'https://www.avito.ru/profile/login';
+		$options[CURLOPT_HEADER] = true;
+		$options[CURLOPT_POST] = true;
+		$options[CURLOPT_ENCODING] = '';
+		if ($captcha === false) {
+			$options[CURLOPT_POSTFIELDS] = "next=/profile&login=$login&password=$password&quick_expire=&token[$token]=$value";
+		} else {
+			$options[CURLOPT_POSTFIELDS] = "next=/profile&login=$login&password=$password&quick_expire=&token[$token]=$value&captcha=$captcha";
+			$options[CURLOPT_COOKIEFILE] = TEMP.'/account.txt';
+		}
+		$options[CURLOPT_COOKIEJAR] = TEMP.'/account.txt';
+		$options[CURLOPT_USERAGENT] = Request::$namedUserAgent;
+		$options[CURLOPT_HTTPHEADER] = [
+			"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+			"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+			"Origin: https://www.avito.ru",
+			"Referer: https://www.avito.ru/profile/login",
+			"Upgrade-Insecure-Requests: 1",
 		];
 		$page = Request::curl(false, $options);
 		if (!is_string($page)) {
@@ -170,19 +184,25 @@ class Account
 		}
 		preg_match('/.*sessid=(.+);.*/U', $page, $match);
 		if (isset($match[1]) and !empty($match[1])) {
-			$sessid = $match[1];
+			self::$sessid = $match[1];
 		}
-		preg_match('/.*(form-captcha-input).*/', $page, $match);
+		if (!empty(self::$sessid)) {
+			$sessid = self::$sessid;
+		}
+		preg_match('/.*<span class="fader">(.+)<\/span>.*/U', $page, $match);
 		if (isset($match[1]) and !empty($match[1])) {
-			$captcha = true;
+			self::$name = $match[1];
+		}
+		if (!empty(self::$name)) {
+			$name = self::$name;
+		}
+		preg_match('/.*src="\/captcha\?(\d+)".*/', $page, $match);
+		if (isset($match[1]) and !empty($match[1])) {
+			$captcha = $match[1];
 		}
 		preg_match('/.*Неправильная пара электронная почта.*/U', $page, $match);
 		if (isset($match[0]) and !empty($match[0])) {
 			$nologpas = true;
-		}
-		preg_match('/.*<span class="fader">(.+)<\/span>.*/U', $page, $match);
-		if (isset($match[1]) and !empty($match[1])) {
-			$name = $match[1];
 		}
 		return [
 			'name' => $name,
@@ -324,6 +344,30 @@ class Account
 				// Не удалось соедениться с avito.ru
 				$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
 				continue;
+			}
+			if ($sessid['captcha'] !== false) {
+				do {
+					$code = AntiCaptcha::decode($sessid['captcha']);
+					// Если вернулась не строка - отпускаем аккаунт без антикапчи
+					if (!is_string($code)) {
+						break;
+					}
+					$tokens = self::getToken('https://www.avito.ru/profile/login');
+					if (!is_array($tokens)) {
+						// Не удалось соедениться с avito.ru
+						$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, false, false);
+						continue 2;
+					}
+					if ($tokens['ip']) {
+						// Доступ веменно ограничен по IP
+						$results[] = self::getElemsAuth(false, $login, $password, false, false, false, false, false, true, false);
+						continue 2;
+					}
+					$token = $tokens['token'];
+					$value = $tokens['value'];
+
+					$sessid = self::getSessid($login, $password, $token, $value, $code);
+				} while ($sessid['captcha'] !== false);
 			}
 			$info = self::getInfo($sessid['sessid']);
 			if (!is_array($info)) {

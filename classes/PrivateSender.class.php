@@ -112,8 +112,8 @@ class PrivateSender
 				CURLOPT_URL => $category['link'].'?p='.$n.'&s=104',
 				CURLOPT_ENCODING => '',
 				CURLOPT_HEADER => true,
-				CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
-				CURLOPT_COOKIEJAR => TEMP.'/cookie.txt',
+				CURLOPT_COOKIEFILE => TEMP.'/category.txt',
+				CURLOPT_COOKIEJAR => TEMP.'/category.txt',
 				CURLOPT_COOKIESESSION => true,
 				CURLOPT_USERAGENT => Request::$unknownUserAgent,
 				CURLOPT_HTTPHEADER => [
@@ -187,7 +187,7 @@ class PrivateSender
 			CURLOPT_POSTFIELDS => "token[".$tokens['token']."]=".$tokens['value']."&comment=".$text,
 			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_COOKIE => "sessid=".$this->current['sessid']."; auth=1",
-			CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
+			CURLOPT_COOKIEFILE => TEMP.'/category.txt',
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -206,7 +206,7 @@ class PrivateSender
 			CURLOPT_ENCODING => '',
 			CURLOPT_USERAGENT => Request::$namedUserAgent,
 			CURLOPT_COOKIE => "sessid=".$this->current['sessid']."; auth=1",
-			CURLOPT_COOKIEFILE => TEMP.'/cookie.txt',
+			CURLOPT_COOKIEFILE => TEMP.'/category.txt',
 			CURLOPT_HTTPHEADER => [
 				"Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
 				"Accept-Language: ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
