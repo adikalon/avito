@@ -1,10 +1,5 @@
 <?php
 
-use Randock\AntiCaptcha\Client;
-use Randock\AntiCaptcha\Task\ImageToTextTask;
-use Randock\AntiCaptcha\TaskResult;
-use Randock\AntiCaptcha\Exception\InvalidRequestException;
-
 /**
  * Работа с anti-captcha.com
  */
