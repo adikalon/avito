@@ -437,7 +437,7 @@ class Account
 							false,
 							$tokens['http']
 						);
-						continue;
+						continue 2;
 					}
 					$token = $tokens['token'];
 					$value = $tokens['value'];
@@ -457,10 +457,12 @@ class Account
 							false,
 							$sessid['http']
 						);
-						continue;
+						continue 2;
 					}
-					if ($sessid['captcha'] !== false and !AntiCaptcha::report($code['token'], $code['id'])) {
-						break;
+					if ($sessid['captcha'] !== false) {
+						if (!AntiCaptcha::report($code['token'], $code['id'])) {
+							break;
+						}
 					}
 				} while ($sessid['captcha'] !== false);
 			}
